@@ -1,0 +1,4 @@
+Package: SurvFS
+Type: Package
+Title: General Feature Selection for Survival Analysis
+Version: 1.0.0
