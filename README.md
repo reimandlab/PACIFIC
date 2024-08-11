@@ -6,16 +6,22 @@ The pipeline runs an iterative procedure consisting of feature preprocessing and
 
 
 ## Installation
-Dependencies: `survival`, `glmnet`.
+Dependencies: `survival`, `glmnet`, `ggplot2`.
 
-For using the pipeline functions, download `pipeline-V5.r` and `source` it at top of your script: 
+#### Using devtools on our GitHub repository
+Using the R package `devtools`, run
 ```R
-source("paht/to/pipeline-V5.r")
+devtools::install_github('https://github.com/reimandlab/SurvFS', build_vignettes = TRUE)
 ```
+#### From source on our GitHub repository
+Clone the repository, for example using `git clone https://github.com/reimandlab/SurvFS.git`.
+Open R in the directory where you cloned the package and run `install.packages("SurvFS", repos = NULL, type = "source")`.
+
+
 
 
 ## Usage
-The pipeline core runs in two steps: 
+SurvFS core runs in two steps: 
 
 * **Step 1:** The function `SurvFS_step1()` runs the iterative procedure (mentioned above) for a number of iterations (`num_iterations`) and stores the iteration results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations=1000`, you can run it with `num_iterations=10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there.
 
