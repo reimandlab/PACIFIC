@@ -1,28 +1,57 @@
-# see the total number of iterations currently accumulated in <step1_output_dir>
-current_total_iters <- function(step1_output_dir){
-    r <- list.files(step1_output_dir, pattern = 'step1-results')
+#' Current Total Iterations
+#'
+#' Get the total number of iterations currently stored in a directory
+#' @param dir WIP
+#' @return WIP
+#' @examples 
+#' WIP
+#' @export
+current_total_iters <- function(dir){
+    r <- list.files(dir, pattern = 'step1-results')
     r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
     N <- sum(as.numeric(sapply(r, '[[', 2)))
-    cat(paste0('Total iterations currently accumulated in "', step1_output_dir, '" = ', N, '\n'))
+    cat(paste0('Total iterations currently accumulated in "', dir, '" = ', N, '\n'))
 }
 
-# step 1: run iterative model fitting, save results in <output_dir>
-pipeline_step1 <- function(data,
-                           time = 'time',
-                           status = 'status',
-                           single_features = NA,
-                           interaction_features = NA,
-                           features_to_discretize = NA,
-                           discretization_method = 'median',
-                           features_with_flexible_direction = NA,
-                           features_to_skip_sparsity_prefiltering = NA,
-                           features_to_skip_survival_prefiltering = NA,
-                           sparsity_criterion = '5_percent',
-                           wald_p_cutoff = 0.1,
-                           subsampling_ratio = 0.8,
-                           num_iterations = 10,
-                           output_dir,
-                           verbose = FALSE){
+#' SurvFS Step 1
+#'
+#' Run the first step of SurvFS
+#' @param data WIP
+#' @param time WIP
+#' @param status WIP
+#' @param single_features WIP
+#' @param interaction_features WIP
+#' @param features_to_discretize WIP
+#' @param discretization_method WIP
+#' @param features_with_flexible_direction WIP
+#' @param features_to_skip_sparsity_prefiltering WIP
+#' @param features_to_skip_survival_prefiltering WIP
+#' @param sparsity_criterion WIP
+#' @param wald_p_cutoff WIP
+#' @param subsampling_ratio WIP
+#' @param num_iterations WIP
+#' @param output_dir WIP
+#' @param verbose WIP
+#' @return WIP
+#' @examples 
+#' WIP
+#' @export
+SurvFS_step1 <- function(data,
+                         time = 'time',
+                         status = 'status',
+                         single_features = NA,
+                         interaction_features = NA,
+                         features_to_discretize = NA,
+                         discretization_method = 'median',
+                         SurvFS_step2features_with_flexible_direction = NA,
+                         SurvFS_step2features_to_skip_sparsity_prefiltering = NA,
+                         SurvFS_step2features_to_skip_survival_prefiltering = NA,
+                         SurvFS_step2sparsity_criterion = '5_percent',
+                         SurvFS_step2wald_p_cutoff = 0.1,
+                         SurvFS_step2subsampling_ratio = 0.8,
+                         SurvFS_step2num_iterations = 10,
+                         SurvFS_step2output_dir,
+                         SurvFS_step2verbose = FALSE){
 
     S.TM <- Sys.time()
     
@@ -31,7 +60,7 @@ pipeline_step1 <- function(data,
         require(glmnet)
     }))
     
-    if(verbose){ cat('----------------------------------------------------\ncall pipeline_step1:\n'); flush.console() }
+    if(verbose){ cat('----------------------------------------------------\ncall SurvFS_step1:\n'); flush.console() }
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -312,11 +341,21 @@ pipeline_step1 <- function(data,
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
 }
 
-# collect results from step 1 stored in <step1_output_dir> and make the final output
-pipeline_step2 <- function(step1_output_dir, 
-                           EN_cutoff = 50,
-                           anova_baseline = NA, 
-                           plot_km = FALSE){
+#' SurvFS Step 2
+#'
+#' Run the second step of SurvFS
+#' @param step1_output_dir WIP
+#' @param EN_cutoff WIP
+#' @param anova_baseline WIP
+#' @param plot_km WIP
+#' @return WIP
+#' @examples 
+#' WIP
+#' @export
+SurvFS_step2 <- function(step1_output_dir, 
+                         EN_cutoff = 50,
+                         anova_baseline = NA, 
+                         plot_km = FALSE){
     
     suppressMessages(suppressWarnings({
         require(survival)

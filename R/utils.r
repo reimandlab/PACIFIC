@@ -1,4 +1,3 @@
-# discretize <features> in <data> based on <method>
 discretize <- function(data, features, discretization_function){
     for(f in features){
         if(!is.numeric(data[[f]])) stop(paste0('"',f,'": cannot discretize non-numeric'))
@@ -7,7 +6,6 @@ discretize <- function(data, features, discretization_function){
     return(data)
 }
 
-# make the table of "features" subject to <data> and <features_vector>
 make_table_of_features <- function(data, features_vector, single_features, flexible_features){
     # this table contains information of feature-IDs: types, levels of elements, base groups, variables.
     features <- do.call(rbind, lapply(features_vector, function(id){
@@ -58,7 +56,6 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
     return(features)
 }
 
-# make data table of variables in <features> subject to <data>
 make_data_for_variables <- function(data, features){
     # make a new data table with the same time & status columns
     new_data <- data[,c('time', 'status')]
@@ -81,7 +78,6 @@ make_data_for_variables <- function(data, features){
     return(new_data)
 }
 
-# filter sparse <features> (unless skipped) subject to <data> with <min_group_size>
 filter_by_sparsity <- function(data, features, skip_ids, min_group_size){
     # loop over unique ids in "features" and keep the ids if either of the following is true:
     # 1 - pass the sparsity filter
@@ -109,7 +105,6 @@ filter_by_sparsity <- function(data, features, skip_ids, min_group_size){
     return(features)
 }
 
-# filter <features> with weak survival association (unless skipped) subject to <data> table of variables with <P_cutoff>
 filter_by_surv <- function(data, features, skip_ids, P_cutoff){
     # calculate "Wald P" for all variables in "features"
     # filtering is based on univariate survival association
@@ -158,7 +153,6 @@ filter_by_surv <- function(data, features, skip_ids, P_cutoff){
     return(features)
 }
 
-# apply Elastic net feature selection to <features> subject to <data> table of variables
 elastic_net_feature_selection <- function(data, features){
     # subset "data" to existing variables in "features" along with 'time' & 'status'
     data <- data[, c('time', 'status', features$variable)]
@@ -171,7 +165,6 @@ elastic_net_feature_selection <- function(data, features){
     return(selected_variables)
 }
 
-# wait for the file to stabilize when being written upon
 wait_for_file_to_stabilize <- function(p){
     while(TRUE){ 
         s <- file.info(p)$size
