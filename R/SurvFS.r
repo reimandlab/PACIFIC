@@ -351,7 +351,7 @@ SurvFS_step2 <- function(step1_output_dir,
                          EN_cutoff = 50,
                          anova_baseline = NA, 
                          plot_km = FALSE){
-    
+    if(plot_km) require(ggplot2)
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
     data <- records$data
@@ -529,7 +529,7 @@ SurvFS_step2 <- function(step1_output_dir,
             }))
             
             km_df$title <- factor(km_df$title, levels = unique(km_df$title))
-            ggplot2::ggplot()+theme_bw()+
+            ggplot()+theme_bw()+
                 geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
                 scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
                 scale_y_continuous(limits = c(0, 1))+
