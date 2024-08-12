@@ -1,6 +1,7 @@
 # SurvFS - general feature selection for survival analysis
 
 This is a general pipeline for performing feature selection with respect to survival outcomes. The input features can be any combination of single features $X_{i}$ and two-way interaction features 
+
 $Y_{j}*Z_{k}$. Any feature (being single or component of interaction) can be arbitrarily numeric or categorical. 
 
 The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of multivariate CoxPH models ($Survival \sim \sum X_{i} + \sum Y_{j}*Z_{k}$) to identify the input features that are most frequently selected across the iterations. These "candidate features" can be seen as a minimal subset of input features that are potentially more robust in explaining the survival outcomes. The pipeline also provides a series of ANOVA P values that enables further refinement of the candidate features. This results in highlighting features that provide complementary information to user-defined baseline variables - and, in the case of interaction features, also to the individual components of the interaction - with respect to survival outcomes.
