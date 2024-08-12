@@ -8,7 +8,7 @@ The pipeline runs an iterative procedure consisting of subsampling, feature prep
 ## Installation
 Dependencies: `survival`, `glmnet`, `ggplot2`.
 
-First clone the repository (`git clone https://github.com/reimandlab/SurvFS.git`), then opne R in the directory you cloned the package in and run `install.packages("SurvFS", repos = NULL, type = "source")`
+First clone the repository (`git clone https://github.com/reimandlab/SurvFS.git`), then open R in the directory you cloned the package in and run `install.packages("SurvFS", repos = NULL, type = "source")`.
 
 ## Usage in a glance
 SurvFS core runs in two steps: 
