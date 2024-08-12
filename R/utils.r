@@ -109,7 +109,7 @@ filter_by_surv <- function(data, features, skip_ids, P_cutoff){
     # calculate "Wald P" for all variables in "features"
     # filtering is based on univariate survival association
     features$Wald_P <- sapply(features$variable, function(v){
-        frmla <- as.formula(paste0('Surv(time, status) ~ ', v))
+        frmla <- as.formula(paste0('survival::Surv(time, status) ~ ', v))
         wald <- summary(suppressWarnings(survival::coxph(frmla, data)))$waldtest
         if('pvalue' %in% names(wald)) return(wald[['pvalue']])
         return(1)
