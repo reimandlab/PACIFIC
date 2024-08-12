@@ -71,14 +71,14 @@ As a simple example, let's search for prognostic mutation features in this datas
 ```R
 set.seed(1) # for reproducibility of this demo
 SurvFS_step1(data = dataset$data,
-               single_features = dataset$mutation_features,
-               num_iterations = 20, 
-               output_dir="out")
+             single_features = dataset$mutation_features,
+             num_iterations = 20, 
+             output_dir="out")
 ```
 Now run `SurvFS_step2()`:
 ```R
 results <- SurvFS_step2(step1_output_dir = "out",
-                          plot_km = TRUE)
+                        plot_km = TRUE)
 ```
 View the candidate features:
 ```R
@@ -112,16 +112,16 @@ Run `SurvFS_step1()` with the above parameters for 3 iterations, and repeat the 
 set.seed(1) # for reproducibility of this demo
 for(i in 1:5){
     SurvFS_step1(data = dataset$data,
-                   single_features = dataset$clinical_variables,
-                   interaction_features = list(dataset$mutation_features,
-                                               dataset$immune_features),
-                   features_to_discretize = dataset$immune_features,
-                   features_with_flexible_direction = dataset$immune_features,
-                   features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
-                   features_to_skip_survival_prefiltering = dataset$clinical_variables,
-                   num_iterations = 3, 
-                   output_dir="out", 
-                   verbose = TRUE)
+		single_features = dataset$clinical_variables,
+		interaction_features = list(dataset$mutation_features,
+                                             dataset$immune_features),
+		features_to_discretize = dataset$immune_features,
+		features_with_flexible_direction = dataset$immune_features,
+		features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
+		features_to_skip_survival_prefiltering = dataset$clinical_variables,
+		num_iterations = 3, 
+		output_dir="out", 
+		verbose = TRUE)
 }
 
 # ----------------------------------------------------
@@ -173,8 +173,8 @@ current_total_iters(step1_output_dir = "out")
 Now run `SurvFS_step2()` with assigning the clinical features to the baseline variables for ANOVA tests:
 ```R
 results <- SurvFS_step2(step1_output_dir = 'out',
-                          anova_baseline = dataset$clinical_variables,
-                          plot_km = TRUE)
+                        anova_baseline = dataset$clinical_variables,
+                        plot_km = TRUE)
 ```
 View the candidate features:
 ```R
