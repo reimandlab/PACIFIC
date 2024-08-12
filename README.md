@@ -11,7 +11,7 @@ Dependencies: `survival`, `glmnet`, `ggplot2`.
 First clone the repository (`git clone https://github.com/reimandlab/SurvFS.git`), then open R in the directory you cloned the package in and run `install.packages("SurvFS", repos = NULL, type = "source")`.
 
 ## Usage in a glance
-SurvFS core runs in two steps: 
+SurvFS runs in two steps: 
 
 * **Step 1:** The function `SurvFS_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations=1000`, you can run it with `num_iterations=10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there.
 
