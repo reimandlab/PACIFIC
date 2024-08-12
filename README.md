@@ -95,7 +95,7 @@ results$km_plots[["ERBB4"]]
 <img src="inst/extdata/km1.jpg" width="50%">
 
 ## Example run 2:
-In this example, we show more complex aspects of SurvFS. Use the same dataset as above. Here, we are interested in finding prognostic interactions between mutation features and immune features, while controlling for the effect of baseline clinical variables. This problem is formulated in the IGX paper based on the following design choices:
+Let's see the more complex aspects of SurvFS. Here, using the example dataset, we are interested in finding prognostic interactions between mutation and immune features while controlling for the effect of baseline clinical variables. This problem is formulated in the IGX paper based on the following design choices:
 * Assign clinical variables to `single_features`.
 * Assign all two-way combinations of mutation and immune features to `interaction_features`.
 * Work with median-dichotomized (higher or lower than median) values of immune features (rather than their numeric values). Therefore, assign immune features to `features_to_discretize`. Use default `discretization_method="median"`.
