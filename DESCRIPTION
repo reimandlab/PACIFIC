@@ -2,5 +2,9 @@ Package: SurvFS
 Type: Package
 Title: General Feature Selection for Survival Analysis
 Version: 1.0.0
+Imports:
+    survival,
+    glmnet,
+    ggplot2
 Encoding: UTF-8
 RoxygenNote: 7.3.2
