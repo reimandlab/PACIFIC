@@ -8,16 +8,15 @@ The pipeline runs an iterative procedure consisting of feature preprocessing and
 ## Installation
 Dependencies: `survival`, `glmnet`, `ggplot2`.
 
-#### Using devtools on our GitHub repository
-Using the R package `devtools`, run
+#### Using devtools
 ```R
 devtools::install_github('https://github.com/reimandlab/SurvFS', build_vignettes = TRUE)
 ```
-#### From source on our GitHub repository
-Clone the repository, for example using `git clone https://github.com/reimandlab/SurvFS.git`.
-Open R in the directory where you cloned the package and run `install.packages("SurvFS", repos = NULL, type = "source")`.
-
-
+#### From source
+First clone `git clone https://github.com/reimandlab/SurvFS.git`, the run from the clone directory:
+```R
+install.packages("SurvFS", repos = NULL, type = "source")
+```
 
 
 ## Usage
