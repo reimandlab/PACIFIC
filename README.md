@@ -42,14 +42,16 @@ dataset <- readRDS(fname_dataset)
 ```
 This is an R list containing a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes ('time' capped at 10 years), clinical variables (sex, age, stage), mutational status of known cancer driver genes, and fraction of major immune cell types in tumors. Let's view the features and some lines of the data table:
 ```R
-cat(dataset$clinical_variables, sep=", ")
-# age, sex, stage
+dataset$clinical_variables
+#1: "age"   "sex"   "stage"
 
-cat(head(dataset$mutation_features), "...", sep=", ")
-# ABL1, ACVR1, ACVR1B, ACVR2A, AJUBA, AKT1, ...
+head(dataset$mutation_features)
+#1: "ABL1"   "ACVR1"  "ACVR1B" "ACVR2A" "AJUBA"  "AKT1"
 
-cat(head(dataset$immune_features), "...", sep=", ")
-# B_cells_naive, B_cells_memory, Plasma_cells, T_cells_CD8, T_cells_CD4_naive, T_cells_CD4_memory_resting, ...
+head(dataset$immune_features)
+#1: "B_cells_naive"              "B_cells_memory"
+#3: "Plasma_cells"               "T_cells_CD8"
+#5: "T_cells_CD4_naive"          "T_cells_CD4_memory_resting"
 
 dataset$data[1:10, c("time", "status", 
                      dataset$clinical_variables, 
