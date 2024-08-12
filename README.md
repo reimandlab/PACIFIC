@@ -93,8 +93,6 @@ results$features
 #1:   ERBB4                 mutated                       NA       80         0.01654919                                               NA                                                NA                                               NA                        NA                         NA
 #2:     APC                 mutated                       NA       70         0.03917444                                               NA                                                NA                                               NA                        NA                         NA
 ```
-Note that no feature was assigned to `anova_baseline`, therefore the "P_ANOVA_of_feature" is equivalent to P value of the univariate coxph model (likelihood ratio test).
-
 
 View the KM plot of the top feature, ERBB4 mutation:
 ```R
@@ -223,12 +221,13 @@ results$km_plots[["KMT2D*Monocytes"]]
 * `output_dir`: The directory to store the results of iterations.
 * `verbose`: whether to print progress messages. Default is `FALSE`.
 
-#### Notes about factors and categorical features
-- The default reference level of a factor feature is its first level and this remains fixed throughout the pipeline, unless the feature is assigned to "features_with_flexible_direction".
-- If a feature is of type `character`, the pipeline automatically converts it to factor by the function `factor()`. If a specific (fixed) reference level for a feature is expected, the user must already set it in the input data to a factor with the desired reference level.
-
 #### `SurvFS_step2()`
 * `step1_output_dir`: The directory where the iteration results (in step 1) are stored.
 * `EN_cutoff`: Cutoff for candidate features (based on percentage of the total iterations). Default is `50`.
 * `anova_baseline`: The baseline variables used for ANOVA tests. Default is `NA` (for no baseline variable).
 * `plot_km`: Whether to generate KM plots of candidate features. Default is `FALSE`.
+
+#### Notes
+- The default reference level of a factor feature is its first level and this remains fixed throughout the pipeline, unless the feature is assigned to "features_with_flexible_direction".
+- If a feature is of type `character`, the pipeline automatically converts it to factor by the function `factor()`. If a specific (fixed) reference level for a feature is expected, the user must already set it in the input data to a factor with the desired reference level.
+- Note that when no feature is assigned to `anova_baseline`, the "P_ANOVA_of_feature", "P_ANOVA_of_first_variable", and "P_ANOVA_of_second_variable" are equivalent to P value of the univariate coxph model corresponding to the feature/variable (likelihood ratio test).
