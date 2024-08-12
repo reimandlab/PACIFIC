@@ -55,11 +55,6 @@ SurvFS_step1 <- function(data,
 
     S.TM <- Sys.time()
     
-    suppressMessages(suppressWarnings({
-        require(survival)
-        require(glmnet)
-    }))
-    
     if(verbose){ cat('----------------------------------------------------\ncall SurvFS_step1:\n'); flush.console() }
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
@@ -357,11 +352,6 @@ SurvFS_step2 <- function(step1_output_dir,
                          anova_baseline = NA, 
                          plot_km = FALSE){
     
-    suppressMessages(suppressWarnings({
-        require(survival)
-        library(ggplot2)
-    }))
-    
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
     data <- records$data
@@ -421,7 +411,7 @@ SurvFS_step2 <- function(step1_output_dir,
     fit.coxph <- function(vars){
         stopifnot(vars %in% colnames(data_vars))
         f <- as.formula(paste0('Surv(time, status) ~ ', paste(vars, collapse = '+')))
-        fit <- suppressWarnings(coxph(f, data = data_vars))
+        fit <- suppressWarnings(survival::coxph(f, data = data_vars))
         return(fit)
     }
     p.anova <- function(cntrl, X){
@@ -539,7 +529,7 @@ SurvFS_step2 <- function(step1_output_dir,
             }))
             
             km_df$title <- factor(km_df$title, levels = unique(km_df$title))
-            ggplot()+theme_bw()+
+            ggplot2::ggplot()+theme_bw()+
                 geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
                 scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
                 scale_y_continuous(limits = c(0, 1))+

@@ -110,7 +110,7 @@ filter_by_surv <- function(data, features, skip_ids, P_cutoff){
     # filtering is based on univariate survival association
     features$Wald_P <- sapply(features$variable, function(v){
         frmla <- as.formula(paste0('Surv(time, status) ~ ', v))
-        wald <- summary(suppressWarnings(coxph(frmla, data)))$waldtest
+        wald <- summary(suppressWarnings(survival::coxph(frmla, data)))$waldtest
         if('pvalue' %in% names(wald)) return(wald[['pvalue']])
         return(1)
     })        
@@ -159,8 +159,8 @@ elastic_net_feature_selection <- function(data, features){
     f <- as.formula(paste0('time + status ~ ', '.'))
     Y <- as.matrix(data[,c('time','status')])
     X <- model.matrix(f, data)[, -1, drop=F]
-    fitted_model <- suppressWarnings(cv.glmnet(x = X, y = Y, family = "cox", alpha = 0.5))
-    coefs <- as.matrix(coef(fitted_model, s = "lambda.min"))
+    fitted_model <- suppressWarnings(glmnet::cv.glmnet(x = X, y = Y, family = "cox", alpha = 0.5))
+    coefs <- as.matrix(glmnet::coef.glmnet(fitted_model, s = "lambda.min"))
     selected_variables <- rownames(coefs)[which(coefs[,1] != 0)]
     return(selected_variables)
 }
