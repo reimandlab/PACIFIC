@@ -8,10 +8,6 @@ The pipeline runs an iterative procedure consisting of subsampling, feature prep
 ## Installation
 Dependencies: `survival`, `glmnet`, `ggplot2`.
 
-#### Using devtools
-```R
-devtools::install_github("https://github.com/reimandlab/SurvFS", build_vignettes = TRUE)
-```
 #### From source
 Clone this repo, then run:
 ```R
