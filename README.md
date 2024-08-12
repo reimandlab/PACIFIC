@@ -30,6 +30,7 @@ SurvFS core runs in two steps:
 Read in the example dataset:
 ```R
 library(SurvFS)
+
 fname_dataset <- system.file("extdata", "example_dataset.rds", package = "SurvFS")
 dataset <- readRDS(fname_dataset)
 
@@ -71,6 +72,8 @@ dataset$data[1:10, c("time", "status",
 ## Example run 1:
 As a simple example, let's search for prognostic mutation features in this dataset, without including any other control variable in the model. Run `SurvFS_step1()` for 20 iterations:
 ```R
+library(SurvFS)
+
 set.seed(1) # for reproducibility of this demo
 SurvFS_step1(data = dataset$data,
              single_features = dataset$mutation_features,
@@ -111,6 +114,8 @@ In this example, we show more complex aspects of the pipeline. Use the same data
   
 Run `SurvFS_step1()` with the above parameters for 3 iterations, and repeat the call for 5 times, yielding in a total of 15 iterations all stored in a specified `output_dir`. Note that usually more than 1000 iterations is needed for stable results (i.e. reproducible `EN_score` obtained in step 2), depending on the complexity of the input data.
 ```R
+library(SurvFS)
+
 set.seed(1) # for reproducibility of this demo
 for(i in 1:5){
     SurvFS_step1(data = dataset$data,
