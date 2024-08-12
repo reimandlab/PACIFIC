@@ -164,7 +164,7 @@ for(i in 1:5){
 # elapsed time: 29.6028 secs 
 ```
 ```R
-current_total_iters(step1_output_dir = "out")
+current_total_iters(dir = "out")
 
 # Total iterations currently accumulated in "out" = 15
 ```
