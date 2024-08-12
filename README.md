@@ -112,16 +112,16 @@ Run `SurvFS_step1()` with the above parameters for 3 iterations, and repeat the 
 set.seed(1) # for reproducibility of this demo
 for(i in 1:5){
     SurvFS_step1(data = dataset$data,
-		single_features = dataset$clinical_variables,
-		interaction_features = list(dataset$mutation_features,
+		 single_features = dataset$clinical_variables,
+		 interaction_features = list(dataset$mutation_features,
                                              dataset$immune_features),
-		features_to_discretize = dataset$immune_features,
-		features_with_flexible_direction = dataset$immune_features,
-		features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
-		features_to_skip_survival_prefiltering = dataset$clinical_variables,
-		num_iterations = 3, 
-		output_dir="out", 
-		verbose = TRUE)
+		 features_to_discretize = dataset$immune_features,
+		 features_with_flexible_direction = dataset$immune_features,
+		 features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
+		 features_to_skip_survival_prefiltering = dataset$clinical_variables,
+		 num_iterations = 3, 
+		 output_dir="out", 
+		 verbose = TRUE)
 }
 
 # ----------------------------------------------------
