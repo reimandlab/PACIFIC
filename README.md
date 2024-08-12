@@ -40,7 +40,7 @@ dataset <- readRDS(fname_dataset)
 # names(dataset)
 # "data" "clinical_variables" "mutation_features" "immune_feature"
 ```
-This is an R list containing a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes ('time' capped at 10 years), clinical variables (sex, age, stage), mutational status of known cancer driver genes, and fraction of major immune cell types in tumors. Let's view the features and some lines of the data table:
+This is an R list containing a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes ('time' capped at 10 years), clinical variables (sex, age, stage), mutational status of known cancer driver genes, and fraction of major immune cell types in tumors. Let's view a portion of the features and the data table:
 ```R
 dataset$clinical_variables
 #1: "age"   "sex"   "stage"
