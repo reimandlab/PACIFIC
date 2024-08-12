@@ -20,8 +20,6 @@ SurvFS core runs in two steps:
 ## Example dataset
 Read in the example dataset:
 ```R
-library(SurvFS)
-
 fname_dataset <- system.file("extdata", "example_dataset.rds", package = "SurvFS")
 dataset <- readRDS(fname_dataset)
 
