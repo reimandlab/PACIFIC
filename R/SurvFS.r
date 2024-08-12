@@ -503,7 +503,7 @@ SurvFS_step2 <- function(step1_output_dir,
                 stopifnot(1 == nrow(df))
                 
                 isIntr <- grepl('\\*', df$id)
-                fit <- survfit(as.formula(paste0('Surv(time, status) ~ ', v)), data_vars)
+                fit <- survival::survfit(as.formula(paste0('Surv(time, status) ~ ', v)), data_vars)
                 km_df <- cbind(get_km_df(fit, custom_levels), 
                                title = paste0('Feature: ', gsub('\\*', ' * ', df$id), 
                                               '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&', 
@@ -516,7 +516,7 @@ SurvFS_step2 <- function(step1_output_dir,
                     km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
                         v <- df[[paste0('feature',i,'_variable')]]
                         n <- ifelse(i == 1, 'first', 'second')
-                        fit <- survfit(as.formula(paste0('Surv(time, status) ~ ', v)), data_vars)
+                        fit <- survival::survfit(as.formula(paste0('Surv(time, status) ~ ', v)), data_vars)
                         cbind(get_km_df(fit, custom_levels), 
                               title = paste0('Feature: ', df[[paste0('feature',i)]], 
                                              '\nLevel: ', df[[paste0('feature',i,'_level')]],
