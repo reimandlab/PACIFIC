@@ -68,6 +68,7 @@ Here, we use SurvFS to search for prognostic mutation features in the example da
 library(SurvFS)
 
 set.seed(1) # for reproducibility of this demo
+
 SurvFS_step1(data = dataset$data,
              single_features = dataset$mutation_features,
              num_iterations = 20, 
@@ -108,6 +109,7 @@ Run `SurvFS_step1()` with the above parameters for 3 iterations, and repeat the 
 library(SurvFS)
 
 set.seed(1) # for reproducibility of this demo
+
 for(i in 1:5){
     SurvFS_step1(data = dataset$data,
 		 single_features = dataset$clinical_variables,
