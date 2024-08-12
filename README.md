@@ -94,7 +94,7 @@ results$features
 #2:     APC                 mutated                       NA       70         0.03917444                                               NA                                                NA                                               NA                        NA                         NA
 ```
 
-View the KM plot of the top feature, ERBB4 mutation:
+The top candidate is "ERBB4" mutation. View its KM plot:
 ```R
 # options(repr.plot.width = 4.4, repr.plot.height = 3.5)
 results$km_plots[["ERBB4"]]
