@@ -225,4 +225,4 @@ results$km_plots[["KMT2D*Monocytes"]]
 #### Notes
 - The default reference level of a factor feature is its first level and this remains fixed throughout the pipeline, unless the it is assigned to "features_with_flexible_direction".
 - If a feature is of type `character`, the pipeline automatically converts it to factor by the function `factor()`. If a specific (fixed) reference level for a feature is expected, the user must already set it to factor with the desired reference level (in the input data).
-- Note that when no feature is assigned to baseline variables for ANOVA (i.e. `anova_baseline`=NA), the "P_ANOVA_of_feature", "P_ANOVA_of_first_variable", and "P_ANOVA_of_second_variable" are equivalent to P value of the univariate coxph model corresponding to the feature/variable (likelihood ratio test).
+- Note that when no feature is assigned to baseline variables for ANOVA (i.e. `anova_baseline=NA`), the "P_ANOVA_of_feature", "P_ANOVA_of_first_variable", and "P_ANOVA_of_second_variable" are equivalent to P value of the univariate coxph model corresponding to the feature/variable (likelihood ratio test).
