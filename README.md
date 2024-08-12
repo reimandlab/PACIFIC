@@ -13,7 +13,7 @@ Dependencies: `survival`, `glmnet`, `ggplot2`.
 devtools::install_github("https://github.com/reimandlab/SurvFS", build_vignettes = TRUE)
 ```
 #### From source
-Clone this repo (`git clone https://github.com/reimandlab/SurvFS.git`), then run from the clone directory:
+Clone this repo, then run from the same directory:
 ```R
 install.packages("SurvFS", repos = NULL, type = "source")
 ```
