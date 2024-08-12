@@ -43,15 +43,15 @@ SurvFS_step1 <- function(data,
                          interaction_features = NA,
                          features_to_discretize = NA,
                          discretization_method = 'median',
-                         SurvFS_step2features_with_flexible_direction = NA,
-                         SurvFS_step2features_to_skip_sparsity_prefiltering = NA,
-                         SurvFS_step2features_to_skip_survival_prefiltering = NA,
-                         SurvFS_step2sparsity_criterion = '5_percent',
-                         SurvFS_step2wald_p_cutoff = 0.1,
-                         SurvFS_step2subsampling_ratio = 0.8,
-                         SurvFS_step2num_iterations = 10,
-                         SurvFS_step2output_dir,
-                         SurvFS_step2verbose = FALSE){
+                         features_with_flexible_direction = NA,
+                         features_to_skip_sparsity_prefiltering = NA,
+                         features_to_skip_survival_prefiltering = NA,
+                         sparsity_criterion = '5_percent',
+                         wald_p_cutoff = 0.1,
+                         subsampling_ratio = 0.8,
+                         num_iterations = 10,
+                         output_dir,
+                         verbose = FALSE){
 
     S.TM <- Sys.time()
     
