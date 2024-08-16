@@ -193,9 +193,18 @@ SurvFS_step1 <- function(data,
             }
         }
         # any factor must have at least two levels
-        if(is.factor(data[[f]])) stopifnot(length(levels(data[[f]])) >= 2)
+        if(is.factor(data[[f]])){
+            # stopifnot(length(levels(data[[f]])) >= 2)
+            if(length(levels(data[[f]])) < 2){
+                stop(paste0('"', f, '" as a factor must have at least two levels.'))
+            }
+        }
         # there must NOT be any missing data
-        stopifnot(all(!is.na(data[[f]])))
+        # stopifnot(all(!is.na(data[[f]])))
+        if(any(is.na(data[[f]]))){
+            stop(paste0('"', f, '" has missing (NA) value(s).'))
+        }
+        
     }; rm(f)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
