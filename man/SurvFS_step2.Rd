@@ -4,12 +4,7 @@
 \alias{SurvFS_step2}
 \title{SurvFS Step 2}
 \usage{
-SurvFS_step2(
-  step1_output_dir,
-  EN_cutoff = 50,
-  anova_baseline = NA,
-  plot_km = FALSE
-)
+SurvFS_step2(step1_output_dir, EN_cutoff = 50, anova_baseline = NA)
 }
 \arguments{
 \item{step1_output_dir}{WIP}
@@ -17,8 +12,6 @@ SurvFS_step2(
 \item{EN_cutoff}{WIP}
 
 \item{anova_baseline}{WIP}
-
-\item{plot_km}{WIP}
 }
 \value{
 WIP

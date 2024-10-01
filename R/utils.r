@@ -1,3 +1,48 @@
+do_fit <- function(family, data, variables){
+    if(0 == length(variables)) variables <- '1'
+    rhs <- paste(variables, collapse = '+')
+    if(family == 'cox'){
+        frm <- as.formula(paste0('survival::Surv(time, status) ~ ', rhs))
+        fit <- suppressWarnings(survival::coxph(formula = frm, data = data))
+    } else {
+        frm <- as.formula(paste0('outcome ~ ', rhs))
+        fit <- suppressWarnings(glm(formula = frm, data = data, family = family))
+    }
+    return(fit)
+}
+
+p_univariate <- function(family, data, X){
+    coefs <- summary(do_fit(family, data, X))$coefficients
+    n <- grep('Pr\\(', colnames(coefs))
+    if(1 != length(n)) stop('fit coefficients are not as expected!')
+    return(coefs[X, n])
+    # this is Wald test for coxPH and logistic regression
+    # https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano
+    # but it is t-test for linear regression
+}
+
+p_anova <- function(family, data, cntrl, X){
+    cntrl <- setdiff(cntrl, X)
+    fit0 <- do_fit(family, data, cntrl)
+    fit1 <- do_fit(family, data, c(cntrl, X))
+    a <- anova(fit0, fit1, test = 'Chisq')
+    n <- grep('Pr\\(', colnames(a))
+    if(1 != length(n)) stop('anova() function is not working as expected!')
+    p <- a[2, n]
+    return(c('p.anova' = p))
+}
+
+effect_size <- function(family, data, cntrl, X, pick=c(NA, 'value', 'lower', 'upper')){
+    pick <- match.arg(pick)
+    fit <- do_fit(family, data, c(cntrl, X))
+    v <- as.numeric(fit$coefficients[X])
+    ci <- as.numeric(suppressMessages(confint(fit)[X,]))
+    if(is.na(pick)) return(c('effect.size' = v, 'effect.size.95%.CI.lower' = ci[1], 'effect.size.95%.CI.upper' = ci[2]))
+    if(pick == 'value') return(v)
+    if(pick == 'lower') return(ci[1])
+    if(pick == 'upper') return(ci[2])
+}
+
 discretize <- function(data, features, discretization_function){
     for(f in features){
         if(!is.numeric(data[[f]])) stop(paste0('"',f,'": cannot discretize non-numeric'))
@@ -57,8 +102,8 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
 }
 
 make_data_for_variables <- function(data, features){
-    # make a new data table with the same time & status columns
-    new_data <- data[,c('time', 'status')]
+    # make a new data table with the same {time, status, outcome} columns
+    new_data <- data[, intersect(colnames(data), c('time','status','outcome'))]
     # then start adding new "variable" columns to new_data
     # these "variables" map to numeric columns based on "features" table:
     # binary when the feature contains only factor(s) {fac, fac*fac}
@@ -105,33 +150,33 @@ filter_by_sparsity <- function(data, features, skip_ids, min_group_size){
     return(features)
 }
 
-filter_by_surv <- function(data, features, skip_ids, P_cutoff){
-    # calculate "Wald P" for all variables in "features"
-    # filtering is based on univariate survival association
-    features$Wald_P <- sapply(features$variable, function(v){
-        frmla <- as.formula(paste0('survival::Surv(time, status) ~ ', v))
-        wald <- summary(suppressWarnings(survival::coxph(frmla, data)))$waldtest
-        if('pvalue' %in% names(wald)) return(wald[['pvalue']])
-        return(1)
+filter_by_univariate_association <- function(family, data, features, skip_ids, P_cutoff){
+    # calculate univariate P values for all variables in "features"
+    features$univariate_P <- sapply(features$variable, function(v){
+        p <- p_univariate(family, data, v)
+        if(is.na(p)) p <- 1
+        stopifnot(is.finite(p))    # ensure appropriate value of P
+        stopifnot(p >= 0 & p <= 1) # ensure appropriate value of P
+        return(p)
     })        
     pass_filter <- function(this_id){
         # process the variables in "features" subset with <this_id>
         df <- subset(features, id == this_id)
-        # choose the group with "the most optimum" Wald P values
+        # choose the group with "the most optimum" P values
         x <- do.call(rbind, lapply(unique(df$group), function(g){
             df <- subset(df, group == g)
-            data.frame(group = g, N_pass = sum(df$Wald_P < P_cutoff), best_Wald_P = min(df$Wald_P))
+            data.frame(group = g, N_pass = sum(df$univariate_P < P_cutoff), best_univariate_P = min(df$univariate_P))
         }))
         x <- x[x$N_pass == max(x$N_pass), ]
-        if(length(unique(x$group)) > 1) x <- x[x$best_Wald_P == min(x$best_Wald_P), ]
+        if(length(unique(x$group)) > 1) x <- x[x$best_univariate_P == min(x$best_univariate_P), ]
         chosen_group <- unique(x$group)
         stopifnot(1 == length(chosen_group))
         # subset to the chosen group
         df <- subset(df, group == chosen_group)
         # return the whole group if <this_id> is in "skip_ids"
         if(this_id %in% skip_ids) return(df)
-        # otherwise, return the subset of chosen group where Wald P < "P_cutoff"
-        return(subset(df, Wald_P < P_cutoff))
+        # otherwise, return the subset of chosen group where univariate P < "P_cutoff"
+        return(subset(df, univariate_P < P_cutoff))
     }
     # first, apply filter to "single_features" & "interaction_features", captured by rows with type != interaction_element
     subset_1 <- do.call(rbind, lapply(subset(features, type != 'interaction_element')$id, pass_filter))    
@@ -153,14 +198,15 @@ filter_by_surv <- function(data, features, skip_ids, P_cutoff){
     return(features)
 }
 
-elastic_net_feature_selection <- function(data, features){
-    # subset "data" to existing variables in "features" along with 'time' & 'status'
-    data <- data[, c('time', 'status', features$variable)]
-    f <- as.formula(paste0('time + status ~ ', '.'))
-    Y <- as.matrix(data[,c('time','status')])
-    X <- model.matrix(f, data)[, -1, drop=F]
-    fitted_model <- suppressWarnings(glmnet::cv.glmnet(x = X, y = Y, family = "cox", alpha = 0.5))
-    coefs <- as.matrix(glmnet::coef.glmnet(fitted_model, s = "lambda.min"))
+elastic_net_variable_selection <- function(family, data, variables){
+    if(family == 'cox'){
+        Y <- as.matrix(data[, c('time', 'status')])
+    } else {
+        Y <- as.matrix(data[, 'outcome', drop=F])
+    }
+    X <- as.matrix(data[, variables, drop=F])
+    fit <- suppressWarnings(glmnet::cv.glmnet(x=X, y=Y, family=family, alpha=0.5))
+    coefs <- as.matrix(glmnet::coef.glmnet(fit, s = 'lambda.min'))
     selected_variables <- rownames(coefs)[which(coefs[,1] != 0)]
     return(selected_variables)
 }

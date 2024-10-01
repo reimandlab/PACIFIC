@@ -19,15 +19,16 @@ current_total_iters <- function(dir){
 #' @param data WIP
 #' @param time WIP
 #' @param status WIP
+#' @param outcome WIP
 #' @param single_features WIP
 #' @param interaction_features WIP
 #' @param features_to_discretize WIP
 #' @param discretization_method WIP
 #' @param features_with_flexible_direction WIP
 #' @param features_to_skip_sparsity_prefiltering WIP
-#' @param features_to_skip_survival_prefiltering WIP
+#' @param features_to_skip_univariate_association_prefiltering WIP
 #' @param sparsity_criterion WIP
-#' @param wald_p_cutoff WIP
+#' @param univariate_p_cutoff WIP
 #' @param subsampling_ratio WIP
 #' @param num_iterations WIP
 #' @param output_dir WIP
@@ -37,17 +38,18 @@ current_total_iters <- function(dir){
 #' WIP
 #' @export
 SurvFS_step1 <- function(data,
-                         time = 'time',
-                         status = 'status',
+                         time = NA,
+                         status = NA,
+                         outcome = NA,
                          single_features = NA,
                          interaction_features = NA,
                          features_to_discretize = NA,
                          discretization_method = 'median',
                          features_with_flexible_direction = NA,
                          features_to_skip_sparsity_prefiltering = NA,
-                         features_to_skip_survival_prefiltering = NA,
+                         features_to_skip_univariate_association_prefiltering = NA,
                          sparsity_criterion = '5_percent',
-                         wald_p_cutoff = 0.1,
+                         univariate_p_cutoff = 0.1,
                          subsampling_ratio = 0.8,
                          num_iterations = 10,
                          output_dir,
@@ -79,14 +81,30 @@ SurvFS_step1 <- function(data,
     # validate arg data
     if(!is.data.frame(data)) stop('"data" should be a data.frame or an instance of a class extended from data.frame')
     data <- as.data.frame(data)
-    # validate arg time and make its column
-    stopifnot(is.character(time), length(time)==1, time %in% colnames(data))
-    data$time <- data[[time]]
-    # validate arg status and make its column
-    stopifnot(is.character(status), length(status)==1, status %in% colnames(data))
-    data$status <- data[[status]]
-    # available data columns
-    avDtCls <- setdiff(colnames(data), c(time, status, 'time', 'status'))
+    if(!identical(NA, time) & !identical(NA, status)){
+        # available data columns
+        avDtCls <- setdiff(colnames(data), c(time, status))
+        if(any(c('time', 'status') %in% avDtCls)) stop('"time" & "status" column names are only valid for the <time> and <status> arguments')
+        # validate arg time and make its column
+        stopifnot(is.character(time), length(time)==1, time %in% colnames(data))
+        data$time <- data[[time]]
+        # validate arg status and make its column
+        stopifnot(is.character(status), length(status)==1, status %in% colnames(data))
+        data$status <- data[[status]]
+        # set family to "cox"
+        family <- 'cox'
+    } else if(!identical(NA, outcome)){
+        # available data columns
+        avDtCls <- setdiff(colnames(data), outcome)
+        if(any('outcome' %in% avDtCls)) stop('"outcome" column name is only valid for the <outcome> argument')
+        # validate arg outcome and make its column
+        stopifnot(is.character(outcome), length(outcome)==1, outcome %in% colnames(data))
+        data$outcome <- data[[outcome]]
+        # set family to "outcome"
+        family <- 'outcome'
+    } else {
+        stop('no signal specified for regression')
+    }
     # validate and prepare vectors of single features
     validPrep_vector_of_single_features <- function(x){
         # empty chr vec if NA
@@ -99,7 +117,7 @@ SurvFS_step1 <- function(data,
     single_features <- validPrep_vector_of_single_features(single_features)
     features_to_discretize <- validPrep_vector_of_single_features(features_to_discretize)    
     features_to_skip_sparsity_prefiltering <- validPrep_vector_of_single_features(features_to_skip_sparsity_prefiltering)
-    features_to_skip_survival_prefiltering <- validPrep_vector_of_single_features(features_to_skip_survival_prefiltering)
+    features_to_skip_univariate_association_prefiltering <- validPrep_vector_of_single_features(features_to_skip_univariate_association_prefiltering)
     features_with_flexible_direction <- validPrep_vector_of_single_features(features_with_flexible_direction)
     # validate and prepare interaction_features
     
@@ -129,7 +147,7 @@ SurvFS_step1 <- function(data,
         stop('"single_features" cannot overlap with any element of "interaction_features"')
     }
     # features to skip any prefiltering cannot overlap with any element of "interaction_features"
-    if(any(c(features_to_skip_survival_prefiltering, 
+    if(any(c(features_to_skip_univariate_association_prefiltering, 
              features_to_skip_sparsity_prefiltering) %in% unlist(strsplit(interaction_features, '\\*')))){
         stop('features to skip any prefiltering cannot overlap with any element of "interaction_features"')
     }
@@ -156,7 +174,7 @@ SurvFS_step1 <- function(data,
         stop('invalid sparsity_criterion')
     }
     # validate the remaining single params
-    stopifnot(1 == length(wald_p_cutoff), is.numeric(wald_p_cutoff), wald_p_cutoff > 0, wald_p_cutoff < 1)
+    stopifnot(1 == length(univariate_p_cutoff), is.numeric(univariate_p_cutoff), univariate_p_cutoff > 0, univariate_p_cutoff < 1)
     stopifnot(1 == length(subsampling_ratio), is.numeric(subsampling_ratio), subsampling_ratio > 0, subsampling_ratio < 1)
     stopifnot(1 == length(num_iterations), is.numeric(num_iterations), num_iterations > 0)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -167,11 +185,28 @@ SurvFS_step1 <- function(data,
     features <- c(features, unique(unlist(strsplit(interaction_features, '\\*'))))
     # sanity check: no overlap between "single_features" and any element of "interaction_features"
     stopifnot(all(!duplicated(features)))
-    # validate time values
-    if(!all(c(is.numeric(data$time), data$time > 0))) stop('"time" column must be numeric with positive values')
-    # validate status values
-    if(!all(c(is.numeric(data$status), data$status %in% c(0, 1)))) stop('"status" column must be numeric with only {0 & 1} values')
-    if(sum(data$status == 1) < 5) stop('there must be at least 5 events (5 rows with status=1) in "data"')
+    if(family == 'cox'){
+        # validate time values
+        if(!all(c(is.numeric(data$time), data$time > 0))) stop('"time" column must be numeric with positive values')
+        # validate status values
+        if(!all(c(is.numeric(data$status), data$status %in% c(0, 1)))) stop('"status" column must be numeric with only {0 & 1} values')
+        if(sum(data$status == 1) < 5) stop('there must be at least 5 events (5 rows with status=1) in "data"')
+    } else if(family == 'outcome'){
+        errMsg <- 'outcome must either be numeric (used for continuous-value regression), or factor with 2 levels (used for binary classification)'
+        # validate outcome values
+        if(class(data$outcome) == 'factor'){
+            if(2 != length(levels(data$outcome))) stop(errMsg)
+            # set family to "binomial"
+            family <- 'binomial'
+        } else if(is.numeric(data$outcome)){
+            # set family to "gaussian"
+            family <- 'gaussian'
+        } else {
+            stop(errMsg)
+        }
+    } else {
+        stop('invalid family')
+    }
     # loop over all single elements of features:
     for(f in unique(unlist(strsplit(features, '\\*')))){
         # every element of features should map to either a numeric or factor in data
@@ -240,11 +275,12 @@ SurvFS_step1 <- function(data,
     data_vars <- make_data_for_variables(data = data_disc, features = features)
 
     # >>> create the "records", save in "output_dir", and check the consistency with previous iterations
-    # "records" = list("data", "data_vars", "features")
+    # "records" = list("family", "data", "data_vars", "features")
     # to save in "records", remove "group" column from "features" and unique its rows
     temp_features <- unique(subset(features, select = -group))
     rownames(temp_features) <- NULL
-    records <- list(data = data, 
+    records <- list(family = family,
+                    data = data, 
                     data_vars = data_vars, 
                     features = temp_features)
     rm(temp_features)
@@ -265,16 +301,28 @@ SurvFS_step1 <- function(data,
     # --- 2: discretize
     # --- 3: filter by sparsity
     # --- 4: make data table of variables
-    # --- 5: filter by univariate survival associations
+    # --- 5: filter by univariate associations
     # --- 6: elastic net feature selection
     res <- lapply(1:num_iterations, function(iter){
         S.TM <- Sys.time()
         if(verbose){ cat(paste0('iteration ', iter, '/', num_iterations, ' : ')); flush.console() }
 
-        # >>> (1) subsample "data" maintaining status ratio -> "data_samp"
+        # >>> (1) subsample "data" -> "data_samp"
         sampleRows <- function(df, ratio) df[sample(nrow(df), floor(ratio*nrow(df))), ]
-        data_samp <- rbind(sampleRows(subset(data, status==0), subsampling_ratio),
-                           sampleRows(subset(data, status==1), subsampling_ratio))
+        if(family == 'cox'){
+            # for cox family, subsample by maintaining status ratio
+            data_samp <- rbind(sampleRows(subset(data, status==0), subsampling_ratio),
+                               sampleRows(subset(data, status==1), subsampling_ratio))
+        } else if(family == 'binomial'){
+            # for binomial family, subsample by maintaining binary outcome ratio
+            data_samp <- rbind(sampleRows(subset(data, outcome==levels(data$outcome)[1]), subsampling_ratio),
+                               sampleRows(subset(data, outcome==levels(data$outcome)[2]), subsampling_ratio))
+        } else if(family == 'gaussian'){
+            # for gaussian family, subsample freely
+            data_samp <- sampleRows(data, subsampling_ratio)
+        } else {
+            stop('invalid family')
+        }
 
         # >>> (2) discretize "data_samp" for "features_to_discretize" -> "data_samp_disc"
         data_samp_disc <- discretize(data = data_samp, 
@@ -295,16 +343,17 @@ SurvFS_step1 <- function(data,
         # >>> (4) get data table of variables based on "data_samp_disc" and "features_flt1" -> "data_samp_vars"
         data_samp_vars <- make_data_for_variables(data = data_samp_disc, features = features_flt1)
 
-        # >>> (5) apply surv filter to "data_samp_vars" and "features_flt1" with "wald_p_cutoff" and "features_to_skip_survival_prefiltering"
-        features_flt2 <- filter_by_surv(data = data_samp_vars, 
-                                        features = features_flt1, 
-                                        skip_ids = features_to_skip_survival_prefiltering, 
-                                        P_cutoff = wald_p_cutoff)
+        # >>> (5) apply univariate association filter to "data_samp_vars" for "features_flt1" using "univariate_p_cutoff" taking care of "features_to_skip_univariate_association_prefiltering"
+        features_flt2 <- filter_by_univariate_association(family = family,
+                                                          data = data_samp_vars, 
+                                                          features = features_flt1, 
+                                                          skip_ids = features_to_skip_univariate_association_prefiltering, 
+                                                          P_cutoff = univariate_p_cutoff)
         # check integrity of "features_flt2" >>>
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         if(0 == nrow(features_flt2)){
             F.TM <- Sys.time()
-            if(verbose){ cat('No feature passed the filter of univariate survival association.', format(F.TM - S.TM), '\n'); flush.console() }
+            if(verbose){ cat('No feature passed the filter of univariate association.', format(F.TM - S.TM), '\n'); flush.console() }
             return(NULL)
         }
         if(1 == nrow(features_flt2)){
@@ -314,7 +363,9 @@ SurvFS_step1 <- function(data,
         }
         
         # >>> (6) apply Elastic net feature selection to "data_samp_vars" and "features_flt2"
-        selected_variables <- elastic_net_feature_selection(data = data_samp_vars, features = features_flt2)
+        selected_variables <- elastic_net_variable_selection(family = family, 
+                                                             data = data_samp_vars, 
+                                                             variables = features_flt2$variable)
         if(0 == length(selected_variables)){
             F.TM <- Sys.time()
             if(verbose){ cat('No feature selected by Elastic net.', format(F.TM - S.TM), '\n'); flush.console() }
@@ -351,18 +402,17 @@ SurvFS_step1 <- function(data,
 #' @param step1_output_dir WIP
 #' @param EN_cutoff WIP
 #' @param anova_baseline WIP
-#' @param plot_km WIP
 #' @return WIP
 #' @examples 
 #' WIP
 #' @export
 SurvFS_step2 <- function(step1_output_dir, 
                          EN_cutoff = 50,
-                         anova_baseline = NA, 
-                         plot_km = FALSE){
-    if(plot_km) require(ggplot2)
+                         anova_baseline = NA){
+    # if(plot_km) require(ggplot2)
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
+    family <- records$family
     data <- records$data
     data_vars <- records$data_vars
     features <- records$features
@@ -376,7 +426,7 @@ SurvFS_step2 <- function(step1_output_dir,
     if(nrow(features) == 0){ cat('No feature passed EN_cutoff\n'); return(NULL) }
     features <- features[order(features$EN_score, decreasing=T),]
     # ---------------------------------------------------------------------------------------------
-    new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', setdiff(colnames(data_vars), c('time','status'))))))
+    new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', setdiff(colnames(data_vars), c('time','status','outcome'))))))
     get_variable_of_single_feature <- function(name, level){
         # use the original "features" from "records"
         features <- records$features
@@ -389,7 +439,7 @@ SurvFS_step2 <- function(step1_output_dir,
     # extract the variables of individual features and place them as separate columns in each row
     features$feature1_variable <- mapply(get_variable_of_single_feature, features$feature1, features$feature1_level)
     features$feature2_variable <- mapply(get_variable_of_single_feature, features$feature2, features$feature2_level)
-    # remove rows with "interaction_element" from "features" to focusing on rows with "single_features" & "interaction_features"
+    # remove rows with "interaction_element" from "features" to focus on rows with "single_features" & "interaction_features"
     features <- subset(features, type != 'interaction_element')
     # ---------------------------------------------------------------------------------------------
     # validate anova_baseline
@@ -417,143 +467,117 @@ SurvFS_step2 <- function(step1_output_dir,
         }
     }
     # ---------------------------------------------------------------------------------------------
-    fit.coxph <- function(vars){
-        stopifnot(vars %in% colnames(data_vars))
-        f <- as.formula(paste0('survival::Surv(time, status) ~ ', paste(vars, collapse = '+')))
-        fit <- suppressWarnings(survival::coxph(f, data = data_vars))
-        return(fit)
-    }
-    p.anova <- function(cntrl, X){
-        cntrl <- setdiff(cntrl, X)
-        vars <- c(cntrl, X)
-        a <- anova(fit.coxph(vars), test = 'Chisq') # https://rdrr.io/cran/survival/man/anova.coxph.html
-        n <- grep('>\\|Chi\\|', colnames(a))
-        if(1 != length(n)) stop('anova() function is not working as expected!')
-        p <- a[X, n]
-        return(p)
-    }
-    logHR <- function(cntrl, X, CI=NA){
-        m <- summary(fit.coxph(unique(c(cntrl, X))))$conf.int[X,]
-        if(is.na(CI)) return(log(m[['exp(coef)']]))
-        if(CI == 'lower') return(log(m[['lower .95']]))
-        if(CI == 'upper') return(log(m[['upper .95']]))
-    }
-    # add P and logHR columns to "features"
+    # add p anova and effect size columns to "features"
     features <- cbind(features, do.call(rbind, apply(features, 1, function(r){
         X <- r[['variable']]
         B <- baseline_variables
         V1 <- r[['feature1_variable']]
         V2 <- r[['feature2_variable']]
         isIntr <- grepl('\\*', r[['id']])
-        data.frame(P_ANOVA_of_feature = p.anova(B, X),
-                   P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p.anova(c(B, V1), X), NA),
-                   P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p.anova(c(B, V2), X), NA),
-                   P_ANOVA_of_feature_controlled_for_both_variables = ifelse(isIntr, p.anova(c(B, V1, V2), X), NA),
-                   
-                   P_ANOVA_of_first_variable = ifelse(isIntr, p.anova(B, V1), NA),
-                   
-                   P_ANOVA_of_second_variable = ifelse(isIntr, p.anova(B, V2), NA),
-                   
-                   logHR_of_feature = logHR(B, X),
-                   logHR_lower.95_of_feature = logHR(B, X, 'lower'),
-                   logHR_upper.95_of_feature = logHR(B, X, 'upper'),
-
-                   logHR_of_first_variable = ifelse(isIntr, logHR(B, V1), NA),
-                   logHR_lower.95_of_first_variable = ifelse(isIntr, logHR(B, V1, 'lower'), NA),
-                   logHR_upper.95_of_first_variable = ifelse(isIntr, logHR(B, V1, 'upper'), NA),
-
-                   logHR_of_second_variable = ifelse(isIntr, logHR(B, V2), NA),
-                   logHR_lower.95_of_second_variable = ifelse(isIntr, logHR(B, V2, 'lower'), NA),
-                   logHR_upper.95_of_second_variable = ifelse(isIntr, logHR(B, V2, 'upper'), NA))
+        data.frame(P_ANOVA_of_feature = p_anova(family, data_vars, B, X),
+                   P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V1), X), NA),
+                   P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V2), X), NA),
+                   P_ANOVA_of_feature_controlled_for_both_variables = ifelse(isIntr, p_anova(family, data_vars, c(B, V1, V2), X), NA),
+                   P_ANOVA_of_first_variable = ifelse(isIntr, p_anova(family, data_vars, B, V1), NA),
+                   P_ANOVA_of_second_variable = ifelse(isIntr, p_anova(family, data_vars, B, V2), NA),
+                   Effect_size_of_feature = effect_size(family, data_vars, B, X, 'value'),
+                   Effect_size_lower.95_of_feature = effect_size(family, data_vars, B, X, 'lower'),
+                   Effect_size_upper.95_of_feature = effect_size(family, data_vars, B, X, 'upper'),
+                   Effect_size_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'value'), NA),
+                   Effect_size_upper.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'upper'), NA),
+                   Effect_size_lower.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'lower'), NA),
+                   Effect_size_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'value'), NA),
+                   Effect_size_lower.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'lower'), NA),
+                   Effect_size_upper.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'upper'), NA))
     })))
     # ---------------------------------------------------------------------------------------------
-    if(plot_km){
-        max_time <- max(data_vars$time)
-        get_km_df <- function(fit, custom_levels){
-            stopifnot(length(fit$strata) == length(custom_levels))
-            df <- rbind(
-                do.call(rbind, lapply(names(fit$strata), function(lv){
-                    strata <- summary(fit)$strata
-                    time <- summary(fit)$time[strata == lv]
-                    surv <- summary(fit)$surv[strata == lv]
-                    n <- sum(strata == lv)
-                    data.frame(x = c(0, time, time), 
-                               xend = c(time, max_time, time), 
-                               y = c(1, surv, 1, surv[-n]), 
-                               yend = c(1, surv, surv), 
-                               strata = lv,
-                               linewidth = 2)
-                })), 
-                subset(data.frame(x = fit$time, 
-                                  xend = fit$time, 
-                                  y = pmax(0, fit$surv - 0.01),
-                                  yend = pmin(1, fit$surv + 0.01),
-                                  strata = rep(names(fit$strata), fit$strata),
-                                  linewidth = 1,
-                                  n.censor = fit$n.censor), n.censor > 0, select=-n.censor))
-            df$strata <- factor(custom_levels[match(df$strata, names(fit$strata))], levels = rev(custom_levels))
-            return(df)
-        }
-        get_km_plot <- function(this_id){
-            df <- subset(features, id == this_id)
-            stopifnot(nrow(df) > 0)
-            NR <- nrow(df)
-            
-            if(grepl('\\*', this_id) & any(is.na(df))) return(NULL)
-            if(any(is.na(df$feature1_level))) return(NULL)
-                
-            
-            custom_levels <- paste0('Feature ', c('absent', 'present'))
-            colors <- c('black', 'red')
-            names(colors) <- custom_levels
-        
-            km_df <- do.call(rbind, lapply(df$variable, function(v){
-                df <- subset(features, variable == v)
-                stopifnot(1 == nrow(df))
-                
-                isIntr <- grepl('\\*', df$id)
-                fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
-                km_df <- cbind(get_km_df(fit, custom_levels), 
-                               title = paste0('Feature: ', gsub('\\*', ' * ', df$id), 
-                                              '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&', 
-                                                                                df$feature2_level), 
-                                                                  df$feature1_level),
-                                              '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
-                                              '\nlogHR: ', signif(df$logHR_of_feature, 2),
-                                              '\nP: ', signif(df$P_ANOVA_of_feature, 2)))
-                if(isIntr){
-                    km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
-                        v <- df[[paste0('feature',i,'_variable')]]
-                        n <- ifelse(i == 1, 'first', 'second')
-                        fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
-                        cbind(get_km_df(fit, custom_levels), 
-                              title = paste0('Feature: ', df[[paste0('feature',i)]], 
-                                             '\nLevel: ', df[[paste0('feature',i,'_level')]],
-                                             '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
-                                             '\nlogHR: ', signif(df[[paste0('logHR_of_',n,'_variable')]], 2),
-                                             '\nP: ', signif(df[[paste0('P_ANOVA_of_',n,'_variable')]], 2)))
-                    })))
-                }
-                return(km_df)
-            }))
-            
-            km_df$title <- factor(km_df$title, levels = unique(km_df$title))
-            ggplot()+theme_bw()+
-                geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
-                scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
-                scale_y_continuous(limits = c(0, 1))+
-                scale_x_continuous(limits = c(0, max_time))+
-                facet_wrap(~title, nrow = NR)+
-                scale_color_manual(values = colors, name=NULL)+
-                ylab('Survival P')+xlab('Time')+
-                theme(panel.grid = element_blank(), 
-                      strip.text.x = element_text(hjust=0), 
-                      strip.background.x = element_blank())
-        }
-        km_plots <- sapply(unique(features$id), get_km_plot, simplify = FALSE, USE.NAMES = TRUE)
-    } else {
-        km_plots <- NULL
-    }
+    # if(plot_km){
+    #     max_time <- max(data_vars$time)
+    #     get_km_df <- function(fit, custom_levels){
+    #         stopifnot(length(fit$strata) == length(custom_levels))
+    #         df <- rbind(
+    #             do.call(rbind, lapply(names(fit$strata), function(lv){
+    #                 strata <- summary(fit)$strata
+    #                 time <- summary(fit)$time[strata == lv]
+    #                 surv <- summary(fit)$surv[strata == lv]
+    #                 n <- sum(strata == lv)
+    #                 data.frame(x = c(0, time, time), 
+    #                            xend = c(time, max_time, time), 
+    #                            y = c(1, surv, 1, surv[-n]), 
+    #                            yend = c(1, surv, surv), 
+    #                            strata = lv,
+    #                            linewidth = 2)
+    #             })), 
+    #             subset(data.frame(x = fit$time, 
+    #                               xend = fit$time, 
+    #                               y = pmax(0, fit$surv - 0.01),
+    #                               yend = pmin(1, fit$surv + 0.01),
+    #                               strata = rep(names(fit$strata), fit$strata),
+    #                               linewidth = 1,
+    #                               n.censor = fit$n.censor), n.censor > 0, select=-n.censor))
+    #         df$strata <- factor(custom_levels[match(df$strata, names(fit$strata))], levels = rev(custom_levels))
+    #         return(df)
+    #     }
+    #     get_km_plot <- function(this_id){
+    #         df <- subset(features, id == this_id)
+    #         stopifnot(nrow(df) > 0)
+    #         NR <- nrow(df)
+    #         
+    #         if(grepl('\\*', this_id) & any(is.na(df))) return(NULL)
+    #         if(any(is.na(df$feature1_level))) return(NULL)
+    #             
+    #         
+    #         custom_levels <- paste0('Feature ', c('absent', 'present'))
+    #         colors <- c('black', 'red')
+    #         names(colors) <- custom_levels
+    #     
+    #         km_df <- do.call(rbind, lapply(df$variable, function(v){
+    #             df <- subset(features, variable == v)
+    #             stopifnot(1 == nrow(df))
+    #             
+    #             isIntr <- grepl('\\*', df$id)
+    #             fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+    #             km_df <- cbind(get_km_df(fit, custom_levels), 
+    #                            title = paste0('Feature: ', gsub('\\*', ' * ', df$id), 
+    #                                           '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&', 
+    #                                                                             df$feature2_level), 
+    #                                                               df$feature1_level),
+    #                                           '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+    #                                           '\nlogHR: ', signif(df$Effect_size_of_feature, 2),
+    #                                           '\nP: ', signif(df$P_ANOVA_of_feature, 2)))
+    #             if(isIntr){
+    #                 km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
+    #                     v <- df[[paste0('feature',i,'_variable')]]
+    #                     n <- ifelse(i == 1, 'first', 'second')
+    #                     fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+    #                     cbind(get_km_df(fit, custom_levels), 
+    #                           title = paste0('Feature: ', df[[paste0('feature',i)]], 
+    #                                          '\nLevel: ', df[[paste0('feature',i,'_level')]],
+    #                                          '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+    #                                          '\nlogHR: ', signif(df[[paste0('Effect_size_of_',n,'_variable')]], 2),
+    #                                          '\nP: ', signif(df[[paste0('P_ANOVA_of_',n,'_variable')]], 2)))
+    #                 })))
+    #             }
+    #             return(km_df)
+    #         }))
+    #         
+    #         km_df$title <- factor(km_df$title, levels = unique(km_df$title))
+    #         ggplot()+theme_bw()+
+    #             geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
+    #             scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
+    #             scale_y_continuous(limits = c(0, 1))+
+    #             scale_x_continuous(limits = c(0, max_time))+
+    #             facet_wrap(~title, nrow = NR)+
+    #             scale_color_manual(values = colors, name=NULL)+
+    #             ylab('Survival P')+xlab('Time')+
+    #             theme(panel.grid = element_blank(), 
+    #                   strip.text.x = element_text(hjust=0), 
+    #                   strip.background.x = element_blank())
+    #     }
+    #     km_plots <- sapply(unique(features$id), get_km_plot, simplify = FALSE, USE.NAMES = TRUE)
+    # } else {
+    #     km_plots <- NULL
+    # }
     # ---------------------------------------------------------------------------------------------
     exclude_cols <- c('type', 'variable', 
                       'feature1', 'feature2',
@@ -564,5 +588,5 @@ SurvFS_step2 <- function(step1_output_dir,
     colnames(features)[colnames(features) == 'feature2_level'] <- 'level_of_second_variable'
     rownames(features) <- NULL
     # ---------------------------------------------------------------------------------------------
-    return(list(features = features, km_plots = km_plots))
+    return(list(features = features))#, km_plots = km_plots))
 }
