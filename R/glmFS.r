@@ -13,9 +13,9 @@ current_total_iters <- function(dir){
     cat(paste0('Total iterations currently accumulated in "', dir, '" = ', N, '\n'))
 }
 
-#' SurvFS Step 1
+#' glmFS Step 1
 #'
-#' Run the first step of SurvFS
+#' Run the first step of glmFS
 #' @param data WIP
 #' @param time WIP
 #' @param status WIP
@@ -37,7 +37,7 @@ current_total_iters <- function(dir){
 #' @examples 
 #' WIP
 #' @export
-SurvFS_step1 <- function(data,
+glmFS_step1 <- function(data,
                          time = NA,
                          status = NA,
                          outcome = NA,
@@ -57,7 +57,7 @@ SurvFS_step1 <- function(data,
 
     S.TM <- Sys.time()
     
-    if(verbose){ cat('----------------------------------------------------\ncall SurvFS_step1:\n'); flush.console() }
+    if(verbose){ cat('----------------------------------------------------\ncall glmFS_step1:\n'); flush.console() }
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -396,9 +396,9 @@ SurvFS_step1 <- function(data,
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
 }
 
-#' SurvFS Step 2
+#' glmFS Step 2
 #'
-#' Run the second step of SurvFS
+#' Run the second step of glmFS
 #' @param step1_output_dir WIP
 #' @param EN_cutoff WIP
 #' @param anova_baseline WIP
@@ -406,7 +406,7 @@ SurvFS_step1 <- function(data,
 #' @examples 
 #' WIP
 #' @export
-SurvFS_step2 <- function(step1_output_dir, 
+glmFS_step2 <- function(step1_output_dir, 
                          EN_cutoff = 50,
                          anova_baseline = NA){
     # if(plot_km) require(ggplot2)

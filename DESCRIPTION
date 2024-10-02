@@ -1,10 +1,9 @@
-Package: SurvFS
+Package: glmFS
 Type: Package
-Title: General Feature Selection for Survival Analysis
+Title: Feature selection using generalized linear models
 Version: 1.0.0
 Imports:
-    survival,
     glmnet,
-    ggplot2
+    survival
 Encoding: UTF-8
 RoxygenNote: 7.2.3
