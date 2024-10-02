@@ -1,4 +1,4 @@
-# SurvFS - general feature selection using regularized GLMs
+# glmFS - a user-friendly pipeline for feature selection in generalized linear models
 
 This is a general pipeline for performing feature selection with respect to survival outcomes. The input features can be any combination of single features $X_{i}$ and two-way interaction features $Y_{j}*Z_{k}$. Any feature (being single or component of interaction) can be arbitrarily numeric or categorical. 
 
