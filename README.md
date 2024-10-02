@@ -3,7 +3,9 @@
 This is a pipeline for feature selection in generalized linear models. The model response can be continuous, binary, or survival outcomes. The model input features (predictors) can include numeric and categorical variables as well as their two-way interactions. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected features across the iterations. These candidate features are a minimal subset of input features with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further refinement of the candidate features. This enables highlighting the features whose explanatory information is complementary to (user-defined) baseline variables, and complementary to the individual components of the interaction when an interaction feature is highlighted. 
 
 ## Installation
-Dependencies: `survival`, `glmnet`, `ggplot2`.
+Dependencies: 
+- `glmnet`
+- `survival` (only for survival outcomes)
 
 First clone the repository (`git clone https://github.com/reimandlab/SurvFS.git`), then open R in the directory you cloned the package in and run `install.packages("SurvFS", repos = NULL, type = "source")`.
 
