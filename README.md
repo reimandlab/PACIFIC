@@ -199,8 +199,8 @@ results$km_plots[["KMT2D*Monocytes"]]
 ## Arguments 
 #### `glmFS_step1()`
 * `data`: A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features and variables.
-* `time`: Name of the column in `data` which contains the time-to-event values. Default is `"time"`.
-* `status`: Name of the column in `data` which contains the event status values. This column must contain only 0 and 1. Default is `"status"`.
+* `response`: Name of the column in `data` which contains the response values.
+* `event`: Name of the column in `data` which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is `NA`.
 * `single_features`: (*for input features*) Vector of "single features". Default is `NA` (for no single feature).
 * `interaction_features`: (*for input features*) Explicit or list-based specification of "interaction features". Explicit: a vector of the form `c("A*B", "C*D", ...)`. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is `NA` (for no interaction feature). Note that `single_features` cannot overlap with any component in `interaction_features`.
 * `features_to_discretize`: The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to `discretization_method`). Default is `NA` (for no such feature).
