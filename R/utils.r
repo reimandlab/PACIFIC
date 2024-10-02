@@ -2,10 +2,10 @@ do_fit <- function(family, data, variables){
     if(0 == length(variables)) variables <- '1'
     rhs <- paste(variables, collapse = '+')
     if(family == 'cox'){
-        frm <- as.formula(paste0('survival::Surv(time, status) ~ ', rhs))
+        frm <- as.formula(paste0('survival::Surv(response, event) ~ ', rhs))
         fit <- suppressWarnings(survival::coxph(formula = frm, data = data))
     } else {
-        frm <- as.formula(paste0('outcome ~ ', rhs))
+        frm <- as.formula(paste0('response ~ ', rhs))
         fit <- suppressWarnings(glm(formula = frm, data = data, family = family))
     }
     return(fit)
@@ -102,8 +102,8 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
 }
 
 make_data_for_variables <- function(data, features){
-    # make a new data table with the same {time, status, outcome} columns
-    new_data <- data[, intersect(colnames(data), c('time','status','outcome'))]
+    # make a new data table with the same {response, event} columns
+    new_data <- data[, intersect(colnames(data), c('response','event'))]
     # then start adding new "variable" columns to new_data
     # these "variables" map to numeric columns based on "features" table:
     # binary when the feature contains only factor(s) {fac, fac*fac}
@@ -200,9 +200,10 @@ filter_by_univariate_association <- function(family, data, features, skip_ids, P
 
 elastic_net_variable_selection <- function(family, data, variables){
     if(family == 'cox'){
-        Y <- as.matrix(data[, c('time', 'status')])
+        Y <- as.matrix(data[, c('response', 'event')])
+        colnames(Y) <- c('time', 'status')
     } else {
-        Y <- as.matrix(data[, 'outcome', drop=F])
+        Y <- as.matrix(data[, 'response', drop=F])
     }
     X <- as.matrix(data[, variables, drop=F])
     fit <- suppressWarnings(glmnet::cv.glmnet(x=X, y=Y, family=family, alpha=0.5))

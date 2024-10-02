@@ -6,9 +6,8 @@
 \usage{
 glmFS_step1(
   data,
-  time = NA,
-  status = NA,
-  outcome = NA,
+  response,
+  event = NA,
   single_features = NA,
   interaction_features = NA,
   features_to_discretize = NA,
@@ -27,11 +26,9 @@ glmFS_step1(
 \arguments{
 \item{data}{WIP}
 
-\item{time}{WIP}
+\item{response}{WIP}
 
-\item{status}{WIP}
-
-\item{outcome}{WIP}
+\item{event}{WIP}
 
 \item{single_features}{WIP}
 

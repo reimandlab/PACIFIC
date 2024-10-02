@@ -1,6 +1,6 @@
 Package: glmFS
 Type: Package
-Title: Feature selection using generalized linear models
+Title: glmFS - a user-friendly pipeline for feature selection in generalized linear models
 Version: 1.0.0
 Imports:
     glmnet,

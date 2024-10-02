@@ -17,9 +17,8 @@ current_total_iters <- function(dir){
 #'
 #' Run the first step of glmFS
 #' @param data WIP
-#' @param time WIP
-#' @param status WIP
-#' @param outcome WIP
+#' @param response WIP
+#' @param event WIP
 #' @param single_features WIP
 #' @param interaction_features WIP
 #' @param features_to_discretize WIP
@@ -38,22 +37,21 @@ current_total_iters <- function(dir){
 #' WIP
 #' @export
 glmFS_step1 <- function(data,
-                         time = NA,
-                         status = NA,
-                         outcome = NA,
-                         single_features = NA,
-                         interaction_features = NA,
-                         features_to_discretize = NA,
-                         discretization_method = 'median',
-                         features_with_flexible_direction = NA,
-                         features_to_skip_sparsity_prefiltering = NA,
-                         features_to_skip_univariate_association_prefiltering = NA,
-                         sparsity_criterion = '5_percent',
-                         univariate_p_cutoff = 0.1,
-                         subsampling_ratio = 0.8,
-                         num_iterations = 10,
-                         output_dir,
-                         verbose = FALSE){
+                        response,
+                        event = NA,
+                        single_features = NA,
+                        interaction_features = NA,
+                        features_to_discretize = NA,
+                        discretization_method = 'median',
+                        features_with_flexible_direction = NA,
+                        features_to_skip_sparsity_prefiltering = NA,
+                        features_to_skip_univariate_association_prefiltering = NA,
+                        sparsity_criterion = '5_percent',
+                        univariate_p_cutoff = 0.1,
+                        subsampling_ratio = 0.8,
+                        num_iterations = 10,
+                        output_dir,
+                        verbose = FALSE){
 
     S.TM <- Sys.time()
     
@@ -81,30 +79,12 @@ glmFS_step1 <- function(data,
     # validate arg data
     if(!is.data.frame(data)) stop('"data" should be a data.frame or an instance of a class extended from data.frame')
     data <- as.data.frame(data)
-    if(!identical(NA, time) & !identical(NA, status)){
-        # available data columns
-        avDtCls <- setdiff(colnames(data), c(time, status))
-        if(any(c('time', 'status') %in% avDtCls)) stop('"time" & "status" column names are only valid for the <time> and <status> arguments')
-        # validate arg time and make its column
-        stopifnot(is.character(time), length(time)==1, time %in% colnames(data))
-        data$time <- data[[time]]
-        # validate arg status and make its column
-        stopifnot(is.character(status), length(status)==1, status %in% colnames(data))
-        data$status <- data[[status]]
-        # set family to "cox"
-        family <- 'cox'
-    } else if(!identical(NA, outcome)){
-        # available data columns
-        avDtCls <- setdiff(colnames(data), outcome)
-        if(any('outcome' %in% avDtCls)) stop('"outcome" column name is only valid for the <outcome> argument')
-        # validate arg outcome and make its column
-        stopifnot(is.character(outcome), length(outcome)==1, outcome %in% colnames(data))
-        data$outcome <- data[[outcome]]
-        # set family to "outcome"
-        family <- 'outcome'
-    } else {
-        stop('no signal specified for regression')
-    }
+    # validate arg response
+    stopifnot(is.character(response), length(response)==1, response %in% colnames(data))
+    # validate arg event (needed only for survival outcomes)
+    if(!identical(NA, event)) stopifnot(is.character(event), length(event)==1, event %in% colnames(data))
+    # available data columns
+    avDtCls <- setdiff(colnames(data), c(response, event, "response", "event")) # "response" and "event" are **reserved** column names and cannot be used for features
     # validate and prepare vectors of single features
     validPrep_vector_of_single_features <- function(x){
         # empty chr vec if NA
@@ -185,27 +165,29 @@ glmFS_step1 <- function(data,
     features <- c(features, unique(unlist(strsplit(interaction_features, '\\*'))))
     # sanity check: no overlap between "single_features" and any element of "interaction_features"
     stopifnot(all(!duplicated(features)))
-    if(family == 'cox'){
-        # validate time values
-        if(!all(c(is.numeric(data$time), data$time > 0))) stop('"time" column must be numeric with positive values')
-        # validate status values
-        if(!all(c(is.numeric(data$status), data$status %in% c(0, 1)))) stop('"status" column must be numeric with only {0 & 1} values')
-        if(sum(data$status == 1) < 5) stop('there must be at least 5 events (5 rows with status=1) in "data"')
-    } else if(family == 'outcome'){
-        errMsg <- 'outcome must either be numeric (used for continuous-value regression), or factor with 2 levels (used for binary classification)'
-        # validate outcome values
-        if(class(data$outcome) == 'factor'){
-            if(2 != length(levels(data$outcome))) stop(errMsg)
-            # set family to "binomial"
+    # set "response" and "event" columns in the data
+    data$response <- data[[response]]; data$event <- data[[event]]
+    # validate "response" (and "event" in case of survival outcomes) and then set the "family"
+    if(!identical(NA, event)){
+        # if "event" argument is specified, the model response is survival outcome, set family to "cox"
+        family <- 'cox'
+        # require response to be "time values"
+        if(!all(c(is.numeric(data$response), data$response > 0))) stop('For survival outcomes, "response" column must be numeric with positive values')
+        # validate event values
+        if(!all(c(is.numeric(data$event), data$event %in% c(0, 1)))) stop('For survival outcomes, "event" column must be numeric with only 0 & 1 values')
+        if(sum(data$event == 1) < 5) stop('For survival outcomes, there must be at least 5 events (5 rows with event=1) in "data"')
+    } else {
+        # is event = NA, the response is either continuous or binary
+        if(class(data$response) == 'factor'){
+            if(2 != length(levels(data$response))) stop(errMsg)
+            # for binary outcome, set family to "binomial"
             family <- 'binomial'
-        } else if(is.numeric(data$outcome)){
-            # set family to "gaussian"
+        } else if(class(data$response) == 'numeric'){
+            # for continuous outcome, set family to "gaussian"
             family <- 'gaussian'
         } else {
-            stop(errMsg)
+            stop('Invalid response values. Expected either "numeric" (for continuous or survival outcomes) or "2-level factor" (for binary outcome)')
         }
-    } else {
-        stop('invalid family')
     }
     # loop over all single elements of features:
     for(f in unique(unlist(strsplit(features, '\\*')))){
@@ -310,13 +292,13 @@ glmFS_step1 <- function(data,
         # >>> (1) subsample "data" -> "data_samp"
         sampleRows <- function(df, ratio) df[sample(nrow(df), floor(ratio*nrow(df))), ]
         if(family == 'cox'){
-            # for cox family, subsample by maintaining status ratio
-            data_samp <- rbind(sampleRows(subset(data, status==0), subsampling_ratio),
-                               sampleRows(subset(data, status==1), subsampling_ratio))
+            # for cox family, subsample by maintaining the ratio of the event in data
+            data_samp <- rbind(sampleRows(subset(data, event==0), subsampling_ratio),
+                               sampleRows(subset(data, event==1), subsampling_ratio))
         } else if(family == 'binomial'){
-            # for binomial family, subsample by maintaining binary outcome ratio
-            data_samp <- rbind(sampleRows(subset(data, outcome==levels(data$outcome)[1]), subsampling_ratio),
-                               sampleRows(subset(data, outcome==levels(data$outcome)[2]), subsampling_ratio))
+            # for binomial family, subsample by maintaining the ratio of the binary outcome in data
+            data_samp <- rbind(sampleRows(subset(data, response==levels(data$response)[1]), subsampling_ratio),
+                               sampleRows(subset(data, response==levels(data$response)[2]), subsampling_ratio))
         } else if(family == 'gaussian'){
             # for gaussian family, subsample freely
             data_samp <- sampleRows(data, subsampling_ratio)
@@ -426,7 +408,7 @@ glmFS_step2 <- function(step1_output_dir,
     if(nrow(features) == 0){ cat('No feature passed EN_cutoff\n'); return(NULL) }
     features <- features[order(features$EN_score, decreasing=T),]
     # ---------------------------------------------------------------------------------------------
-    new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', setdiff(colnames(data_vars), c('time','status','outcome'))))))
+    new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', grep('^v[0-9]+$', colnames(data_vars), value=T)))))
     get_variable_of_single_feature <- function(name, level){
         # use the original "features" from "records"
         features <- records$features
