@@ -177,6 +177,7 @@ glmFS_step1 <- function(data,
         if(!all(c(is.numeric(data$event), data$event %in% c(0, 1)))) stop('For survival outcomes, "event" column must be numeric with only 0 & 1 values')
         if(sum(data$event == 1) < 5) stop('For survival outcomes, there must be at least 5 events (5 rows with event=1) in "data"')
     } else {
+        errMsg <- 'Invalid response values. Expected either "numeric" (for continuous response) or "2-level factor" (for binary response)'
         # is event = NA, the response is either continuous or binary
         if(class(data$response) == 'factor'){
             if(2 != length(levels(data$response))) stop(errMsg)
@@ -186,7 +187,7 @@ glmFS_step1 <- function(data,
             # for continuous outcome, set family to "gaussian"
             family <- 'gaussian'
         } else {
-            stop('Invalid response values. Expected either "numeric" (for continuous or survival outcomes) or "2-level factor" (for binary outcome)')
+            stop(errMsg)
         }
     }
     # loop over all single elements of features:
