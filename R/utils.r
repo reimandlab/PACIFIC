@@ -170,7 +170,11 @@ filter_by_univariate_association <- function(family, data, features, skip_ids, P
         x <- x[x$N_pass == max(x$N_pass), ]
         if(length(unique(x$group)) > 1) x <- x[x$best_univariate_P == min(x$best_univariate_P), ]
         chosen_group <- unique(x$group)
-        stopifnot(1 == length(chosen_group))
+        # stopifnot(1 == length(chosen_group))
+        if(length(chosen_group) > 1){
+            # in the case of tie, always choose the first group
+            chosen_group <- chosen_group[1]
+        }
         # subset to the chosen group
         df <- subset(df, group == chosen_group)
         # return the whole group if <this_id> is in "skip_ids"
