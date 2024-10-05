@@ -103,11 +103,11 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
 
 make_data_for_variables <- function(data, features){
     # make a new data table with the same {response, event} columns
-    new_data <- data[, intersect(colnames(data), c('response','event'))]
+    new_data <- data[, intersect(colnames(data), c('response','event')), drop=F]
     # then start adding new "variable" columns to new_data
     # these "variables" map to numeric columns based on "features" table:
     # binary when the feature contains only factor(s) {fac, fac*fac}
-    # continuous when the feature contains at least one numeric element {num, num*num, num*fac, fac*num)}
+    # continuous when the feature contains at least one numeric element {num, num*num, num*fac, fac*num}
     for(i in 1:nrow(features)){
         r <- features[i,]
         get_v <- function(name, level){
