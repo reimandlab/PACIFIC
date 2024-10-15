@@ -10,7 +10,7 @@ current_total_iters <- function(dir){
     r <- list.files(dir, pattern = 'step1-results')
     r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
     N <- sum(as.numeric(sapply(r, '[[', 2)))
-    cat(paste0('Total iterations currently accumulated in "', dir, '" = ', N, '\n'))
+    return(N)
 }
 
 #' glmFS Step 1
