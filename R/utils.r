@@ -13,6 +13,7 @@ do_fit <- function(family, data, variables){
 
 p_univariate <- function(family, data, X){
     coefs <- summary(do_fit(family, data, X))$coefficients
+    if(! X %in% rownames(coefs)) return(1)
     n <- grep('Pr\\(', colnames(coefs))
     if(1 != length(n)) stop('fit coefficients are not as expected!')
     return(coefs[X, n])
@@ -29,6 +30,7 @@ p_anova <- function(family, data, cntrl, X){
     n <- grep('Pr\\(', colnames(a))
     if(1 != length(n)) stop('anova() function is not working as expected!')
     p <- a[2, n]
+    if(is.na(p)) p <- 1
     return(c('p.anova' = p))
 }
 
