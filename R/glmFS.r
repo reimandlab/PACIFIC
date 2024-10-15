@@ -391,7 +391,8 @@ glmFS_step1 <- function(data,
 #' @export
 glmFS_step2 <- function(step1_output_dir, 
                          EN_cutoff = 50,
-                         anova_baseline = NA){
+                         anova_baseline = NA, 
+                         verbose = FALSE){
     # if(plot_km) require(ggplot2)
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
@@ -402,11 +403,11 @@ glmFS_step2 <- function(step1_output_dir,
     # ---------------------------------------------------------------------------------------------
     S <- lapply(list.files(step1_output_dir, pattern = 'step1-results', full.names = T), readRDS)
     N <- sum(sapply(S, length))
-    if(0 == length(unlist(S))){ cat('No feature selected by EN in step1\n'); return(NULL) }
+    if(0 == length(unlist(S))){ if(verbose) cat('No feature selected by EN in step1\n'); return(NULL) }
     S <- sort(100 * table(unlist(S)) / N, decreasing = T)
     features$EN_score <- as.numeric(S[features$variable])
     features <- subset(features, EN_score > EN_cutoff)
-    if(nrow(features) == 0){ cat('No feature passed EN_cutoff\n'); return(NULL) }
+    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); return(NULL) }
     features <- features[order(features$EN_score, decreasing=T),]
     # ---------------------------------------------------------------------------------------------
     new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', grep('^v[0-9]+$', colnames(data_vars), value=T)))))
