@@ -425,6 +425,7 @@ glmFS_step2 <- function(step1_output_dir,
     features$feature2_variable <- mapply(get_variable_of_single_feature, features$feature2, features$feature2_level)
     # remove rows with "interaction_element" from "features" to focus on rows with "single_features" & "interaction_features"
     features <- subset(features, type != 'interaction_element')
+    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); return(NULL) }
     # ---------------------------------------------------------------------------------------------
     # validate anova_baseline
     if(identical(NA, anova_baseline)) anova_baseline <- character(0)
