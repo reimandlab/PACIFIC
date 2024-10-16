@@ -459,6 +459,7 @@ glmFS_step2 <- function(step1_output_dir,
         V1 <- r[['feature1_variable']]
         V2 <- r[['feature2_variable']]
         isIntr <- grepl('\\*', r[['id']])
+        suppressWarnings(
         data.frame(P_ANOVA_of_feature = p_anova(family, data_vars, B, X),
                    P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V1), X), NA),
                    P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V2), X), NA),
@@ -474,6 +475,7 @@ glmFS_step2 <- function(step1_output_dir,
                    Effect_size_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'value'), NA),
                    Effect_size_lower.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'lower'), NA),
                    Effect_size_upper.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'upper'), NA))
+        )
     })))
     # ---------------------------------------------------------------------------------------------
     # if(plot_km){
