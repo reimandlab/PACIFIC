@@ -13,9 +13,9 @@ current_total_iters <- function(dir){
     return(N)
 }
 
-#' glmFS Step 1
+#' PACIFIC Step 1
 #'
-#' Run the first step of glmFS
+#' Run the first step of PACIFIC
 #' @param data WIP
 #' @param response WIP
 #' @param event WIP
@@ -36,26 +36,26 @@ current_total_iters <- function(dir){
 #' @examples 
 #' WIP
 #' @export
-glmFS_step1 <- function(data,
-                        response,
-                        event = NA,
-                        single_features = NA,
-                        interaction_features = NA,
-                        features_to_discretize = NA,
-                        discretization_method = 'median',
-                        features_with_flexible_direction = NA,
-                        features_to_skip_sparsity_prefiltering = NA,
-                        features_to_skip_univariate_association_prefiltering = NA,
-                        sparsity_criterion = '5_percent',
-                        univariate_p_cutoff = 0.1,
-                        subsampling_ratio = 0.8,
-                        num_iterations = 10,
-                        output_dir,
-                        verbose = FALSE){
+PACIFIC_step1 <- function(data,
+                          response,
+                          event = NA,
+                          single_features = NA,
+                          interaction_features = NA,
+                          features_to_discretize = NA,
+                          discretization_method = 'median',
+                          features_with_flexible_direction = NA,
+                          features_to_skip_sparsity_prefiltering = NA,
+                          features_to_skip_univariate_association_prefiltering = NA,
+                          sparsity_criterion = '5_percent',
+                          univariate_p_cutoff = 0.1,
+                          subsampling_ratio = 0.8,
+                          num_iterations = 10,
+                          output_dir,
+                          verbose = FALSE){
 
     S.TM <- Sys.time()
     
-    if(verbose){ cat('----------------------------------------------------\ncall glmFS_step1:\n'); flush.console() }
+    if(verbose){ cat('----------------------------------------------------\ncall PACIFIC_step1:\n'); flush.console() }
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -379,9 +379,9 @@ glmFS_step1 <- function(data,
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
 }
 
-#' glmFS Step 2
+#' PACIFIC Step 2
 #'
-#' Run the second step of glmFS
+#' Run the second step of PACIFIC
 #' @param step1_output_dir WIP
 #' @param EN_cutoff WIP
 #' @param anova_baseline WIP
@@ -389,10 +389,10 @@ glmFS_step1 <- function(data,
 #' @examples 
 #' WIP
 #' @export
-glmFS_step2 <- function(step1_output_dir, 
-                         EN_cutoff = 50,
-                         anova_baseline = NA, 
-                         verbose = FALSE){
+PACIFIC_step2 <- function(step1_output_dir, 
+                          EN_cutoff = 50,
+                          anova_baseline = NA, 
+                          verbose = FALSE){
     # if(plot_km) require(ggplot2)
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))

@@ -1,6 +1,6 @@
-Package: glmFS
+Package: PACIFIC
 Type: Package
-Title: glmFS - a user-friendly pipeline for feature selection in generalized linear models
+Title: PACIFIC - Predict and Analyze Combinations of Interacting Features In Cancer
 Version: 1.0.0
 Imports:
     glmnet,

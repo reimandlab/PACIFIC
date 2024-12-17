@@ -1,4 +1,4 @@
-# glmFS - a pipeline for feature selection using generalized linear models
+# PACIFIC - Predict and Analyze Combinations of Interacting Features In Cancer
 
 This is a pipeline for feature selection using generalized linear models. The model response can be continuous, binary, or survival outcomes. The model input features (predictors) can include numeric and categorical variables as well as their two-way interactions. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected features across the iterations. These candidate features are a minimal subset of input features with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further refinement of the candidate features. This enables highlighting the features whose explanatory information is complementary to (user-defined) baseline variables, and complementary to the individual components of the interaction when an interaction feature is highlighted. 
 
@@ -7,19 +7,19 @@ Dependencies:
 - `glmnet`
 - `survival` (only for survival outcomes)
 
-First clone the repository (`git clone https://github.com/reimandlab/glmFS.git`), then open R in the directory you cloned the package in and run `install.packages("glmFS", repos = NULL, type = "source")`.
+First clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then open R in the directory you cloned the package in and run `install.packages("PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage in a glance
-glmFS runs in two steps: 
+PACIFIC runs in two steps: 
 
-* **Step 1:** The function `glmFS_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
+* **Step 1:** The function `PACIFIC_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
 
-* **Step 2:**  After completing the iterations in step 1, call `glmFS_step2()` and specify the directory where the iteration results are stored (`step1_output_dir`). This function outputs the candidate features, i.e. the ones selected by regularizations in more than a certain percentage of total iterations (determined by `EN_cutoff`), as well as the ANOVA P values. To include custom baseline variables for the ANOVA tests, specify them in `anova_baseline`.
+* **Step 2:**  After completing the iterations in step 1, call `PACIFIC_step2()` and specify the directory where the iteration results are stored (`step1_output_dir`). This function outputs the candidate features, i.e. the ones selected by regularizations in more than a certain percentage of total iterations (determined by `EN_cutoff`), as well as the ANOVA P values. To include custom baseline variables for the ANOVA tests, specify them in `anova_baseline`.
 
 ## Example dataset
 Read in the example dataset:
 ```R
-fname_dataset <- system.file("extdata", "example_dataset.rds", package = "glmFS")
+fname_dataset <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
 dataset <- readRDS(fname_dataset)
 
 # class(dataset)
@@ -60,22 +60,22 @@ dataset$data[1:10, c("time", "status",
 ```
 
 ## Example run 1:
-Here, we use glmFS to search for prognostic mutation features in the example dataset, without including any other control variable in the model. Run `glmFS_step1()` for 20 iterations:
+Here, we use PACIFIC to search for prognostic mutation features in the example dataset, without including any other control variable in the model. Run `PACIFIC_step1()` for 20 iterations:
 ```R
-library(glmFS)
+library(PACIFIC)
 
 set.seed(1) # for reproducibility of this demo
 
-glmFS_step1(data = dataset$data,
-            response = "time",
-            event = "status",
-            single_features = dataset$mutation_features,
-            num_iterations = 20,
-            output_dir = "out")
+PACIFIC_step1(data = dataset$data,
+             response = "time",
+             event = "status",
+             single_features = dataset$mutation_features,
+             num_iterations = 20,
+             output_dir = "out")
 ```
-Now run `glmFS_step2()`:
+Now run `PACIFIC_step2()`:
 ```R
-results <- glmFS_step2(step1_output_dir = "out")
+results <- PACIFIC_step2(step1_output_dir = "out")
 ```
 View the candidate features:
 ```R
@@ -94,7 +94,7 @@ results$km_plots[["ERBB4"]]
 <img src="inst/extdata/km1.jpg" width="50%">
 
 ## Example run 2:
-Let's see the more complex aspects of glmFS. Here, using the example dataset, we are interested in finding prognostic interactions between mutation and immune features while controlling for the effect of baseline clinical variables. This problem is formulated in the IGX paper based on the following design choices:
+Let's see the more complex aspects of PACIFIC. Here, using the example dataset, we are interested in finding prognostic interactions between mutation and immune features while controlling for the effect of baseline clinical variables. This problem is formulated in the IGX paper based on the following design choices:
 * Assign clinical variables to `single_features`.
 * Assign all two-way combinations of mutation and immune features to `interaction_features`.
 * Work with median-dichotomized (higher or lower than median) values of immune features (rather than their numeric values). Therefore, assign immune features to `features_to_discretize`. Use default `discretization_method = "median"`.
@@ -102,30 +102,30 @@ Let's see the more complex aspects of glmFS. Here, using the example dataset, we
 * Mutation features are factors with "not_mutated" as first level which is by default fixed to their reference level.
 * Avoid prefiltering of the clinical variables inside the iterations to make sure that their effects are controlled for in all regularized CoxPH models. Therefore, assign clinical features to both `features_to_skip_sparsity_prefiltering` and `features_to_skip_survival_prefiltering`.
   
-Run `glmFS_step1()` with the above parameters for 3 iterations, and repeat the call for 5 times, yielding in a total of 15 iterations all stored in a specified `output_dir`. Note that usually more than 1000 iterations is needed for stable results (i.e. reproducible `EN_score` obtained in step 2), depending on the complexity of the input data.
+Run `PACIFIC_step1()` with the above parameters for 3 iterations, and repeat the call for 5 times, yielding in a total of 15 iterations all stored in a specified `output_dir`. Note that usually more than 1000 iterations is needed for stable results (i.e. reproducible `EN_score` obtained in step 2), depending on the complexity of the input data.
 ```R
-library(glmFS)
+library(PACIFIC)
 
 set.seed(1) # for reproducibility of this demo
 
 for(i in 1:5){
-    glmFS_step1(data = dataset$data,
-                response = "time",
-                event = "status",
-                single_features = dataset$clinical_variables,
-		interaction_features = list(dataset$mutation_features,
-                                            dataset$immune_features),
-		features_to_discretize = dataset$immune_features,
-		features_with_flexible_direction = dataset$immune_features,
-		features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
-		features_to_skip_univariate_association_prefiltering = dataset$clinical_variables,
-		num_iterations = 3, 
-		output_dir = "out", 
-		verbose = TRUE)
+    PACIFIC_step1(data = dataset$data,
+                  response = "time",
+                  event = "status",
+                  single_features = dataset$clinical_variables,
+		  interaction_features = list(dataset$mutation_features,
+                                              dataset$immune_features),
+		  features_to_discretize = dataset$immune_features,
+		  features_with_flexible_direction = dataset$immune_features,
+		  features_to_skip_sparsity_prefiltering = dataset$clinical_variables,
+		  features_to_skip_univariate_association_prefiltering = dataset$clinical_variables,
+		  num_iterations = 3, 
+		  output_dir = "out", 
+		  verbose = TRUE)
 }
 
 # ----------------------------------------------------
-# call glmFS_step1:
+# call PACIFIC_step1:
 # preprocessing ... 14.18098 secs 
 # iteration 1/3 : 27 features selected by Elastic net. 2.674277 secs 
 # iteration 2/3 : No feature selected by Elastic net. 2.800196 secs 
@@ -133,7 +133,7 @@ for(i in 1:5){
 # save the results in: path/to/out
 # elapsed time: 22.78648 secs 
 # ----------------------------------------------------
-# call glmFS_step1:
+# call PACIFIC_step1:
 # preprocessing ... 18.95363 secs 
 # iteration 1/3 : 24 features selected by Elastic net. 2.926076 secs 
 # iteration 2/3 : No feature selected by Elastic net. 2.509057 secs 
@@ -141,7 +141,7 @@ for(i in 1:5){
 # save the results in: path/to/out
 # elapsed time: 27.35026 secs 
 # ----------------------------------------------------
-# call glmFS_step1:
+# call PACIFIC_step1:
 # preprocessing ... 18.68423 secs 
 # iteration 1/3 : 34 features selected by Elastic net. 2.991087 secs 
 # iteration 2/3 : 28 features selected by Elastic net. 2.560865 secs 
@@ -149,7 +149,7 @@ for(i in 1:5){
 # save the results in: path/to/out
 # elapsed time: 26.98579 secs 
 # ----------------------------------------------------
-# call glmFS_step1:
+# call PACIFIC_step1:
 # preprocessing ... 19.10262 secs 
 # iteration 1/3 : 33 features selected by Elastic net. 2.649518 secs 
 # iteration 2/3 : 28 features selected by Elastic net. 2.678333 secs 
@@ -157,7 +157,7 @@ for(i in 1:5){
 # save the results in: path/to/out
 # elapsed time: 27.57621 secs 
 # ----------------------------------------------------
-# call glmFS_step1:
+# call PACIFIC_step1:
 # preprocessing ... 21.04174 secs 
 # iteration 1/3 : 35 features selected by Elastic net. 3.067441 secs 
 # iteration 2/3 : 27 features selected by Elastic net. 2.744998 secs 
@@ -170,10 +170,10 @@ current_total_iters(dir = "out")
 
 # Total iterations currently accumulated in "out" = 15
 ```
-Now run `glmFS_step2()` with assigning the clinical features to the baseline variables for ANOVA tests:
+Now run `PACIFIC_step2()` with assigning the clinical features to the baseline variables for ANOVA tests:
 ```R
-results <- glmFS_step2(step1_output_dir = 'out',
-                       anova_baseline = dataset$clinical_variables)
+results <- PACIFIC_step2(step1_output_dir = 'out',
+                         anova_baseline = dataset$clinical_variables)
 ```
 View the candidate features:
 ```R
@@ -197,7 +197,7 @@ results$km_plots[["KMT2D*Monocytes"]]
 
 
 ## Arguments 
-#### `glmFS_step1()`
+#### `PACIFIC_step1()`
 * `data`: A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features and variables.
 * `response`: Name of the column in `data` which contains the response values.
 * `event`: Name of the column in `data` which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is `NA`.
@@ -215,7 +215,7 @@ results$km_plots[["KMT2D*Monocytes"]]
 * `output_dir`: The directory to store the results of iterations.
 * `verbose`: whether to print progress messages. Default is `FALSE`.
 
-#### `glmFS_step2()`
+#### `PACIFIC_step2()`
 * `step1_output_dir`: The directory where the iteration results (in step 1) are stored.
 * `EN_cutoff`: Cutoff for candidate features (based on percentage of the total iterations). Default is `50`.
 * `anova_baseline`: The baseline variables used for ANOVA tests. Default is `NA` (for no baseline variable).
