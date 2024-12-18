@@ -198,7 +198,7 @@ results$km_plots[["KMT2D*Monocytes"]]
 
 ## Arguments 
 #### `PACIFIC_step1()`
-* `data`: A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features and variables.
+* `data`: A data.frame (or an extension of data.frame, e.g. data.table). The table of input data with rows for samples and columns for features and variables.
 * `response`: Name of the column in `data` which contains the response values.
 * `event`: Name of the column in `data` which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is `NA`.
 * `single_features`: (*for input features*) Vector of "single features". Default is `NA` (for no single feature).

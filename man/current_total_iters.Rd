@@ -9,12 +9,6 @@ current_total_iters(dir)
 \arguments{
 \item{dir}{WIP}
 }
-\value{
-WIP
-}
 \description{
 Get the total number of iterations currently stored in a directory
-}
-\examples{
-WIP
 }

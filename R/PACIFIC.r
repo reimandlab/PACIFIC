@@ -1,10 +1,9 @@
 #' Current Total Iterations
 #'
 #' Get the total number of iterations currently stored in a directory
+#' 
 #' @param dir WIP
-#' @return WIP
-#' @examples 
-#' WIP
+#' 
 #' @export
 current_total_iters <- function(dir){
     r <- list.files(dir, pattern = 'step1-results')
@@ -13,29 +12,68 @@ current_total_iters <- function(dir){
     return(N)
 }
 
+
 #' PACIFIC Step 1
 #'
 #' Run the first step of PACIFIC
-#' @param data WIP
-#' @param response WIP
-#' @param event WIP
-#' @param single_features WIP
-#' @param interaction_features WIP
-#' @param features_to_discretize WIP
-#' @param discretization_method WIP
-#' @param features_with_flexible_direction WIP
-#' @param features_to_skip_sparsity_prefiltering WIP
-#' @param features_to_skip_univariate_association_prefiltering WIP
-#' @param sparsity_criterion WIP
-#' @param univariate_p_cutoff WIP
-#' @param subsampling_ratio WIP
-#' @param num_iterations WIP
-#' @param output_dir WIP
-#' @param verbose WIP
-#' @return WIP
-#' @examples 
-#' WIP
-#' @export
+#' 
+#' @param data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
+#' @param response Name of the column in data which contains the response values.
+#' @param event Name of the column in 'data' which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is 'NA'.
+#' @param single_features  (for input features) Vector of "single features". Default is 'NA' (for no single feature).
+#' @param interaction_features (for input features) Explicit or list-based specification of "interaction features". Explicit: a vector of the form 'c("A*B", "C*D", ...)'. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is 'NA' (for no interaction feature). Note that 'single_features' cannot overlap with any component in 'interaction_features'.
+#' @param features_to_discretize The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to 'discretization_method'). Default is 'NA' (for no such feature).
+#' @param discretization_method The method for discretization. Either "median" (for median dichotomization), or a 'function' designed to get a numeric vector as input and return a factor vector (of the same length) as output. Default is '"median"'.
+#' @param features_with_flexible_direction The subset of input features (being single or component of interaction) to be allowed to have flexible direction. Applicable only to either factor variables, or numeric variables in 'features_to_discretize'. This means that the reference level of these variables are to be determined by the pipeline in order to optimize the associations with the 'response' Default is 'NA' (for no such feature).
+#' @param features_to_skip_sparsity_prefiltering The subset of input features (being single only) to be skipped for prefiltering by sparsity (within iterations). Default is 'NA' (for no such feature).
+#' @param features_to_skip_univariate_association_prefiltering The subset of input features (being single only) to be skipped for prefiltering by weak associations with the 'response' (within iterations) . Default is NA (for no such feature).
+#' @param sparsity_criterion The criterion used for detecting sparse features in prefiltering by sparsity (within iterations). Applicable to features which involve factor(s). It should be a string of the form '"X_percent"' or '"X_absolute"' (where 'X' is a number), meaning that the cutoff for the minimum size of the feature is either 'X' percent of the size of the input data (within the iteration) or is just 'X', respectively. Default is '"5_percent"'.
+#' @param univariate_p_cutoff Cutoff for the P values of univariate models used for prefiltering by weak association with the 'response'. Default is 0.1.
+#' @param subsampling_ratio The ratio used for subsampling 'data' to make the input data for each iteration. Note that the ratio of events (in survival analysis) or each level of response (if it's categorical) in 'data' is maintained in the subsamplings. Default is '0.8'.
+#' @param num_iterations Number of iterations to run. Default is '10'.
+#' @param output_dir The directory to store the results of iterations.
+#' @param verbose Whether to print progress messages. Default is 'FALSE'.
+PACIFIC_step1 <- function(data,
+                          response,
+                          event = NA,
+                          single_features = NA,
+                          interaction_features = NA,
+                          features_to_discretize = NA,
+                          discretization_method = 'median',
+                          features_with_flexible_direction = NA,
+                          features_to_skip_sparsity_prefiltering = NA,
+                          features_to_skip_univariate_association_prefiltering = NA,
+                          sparsity_criterion = '5_percent',
+                          univariate_p_cutoff = 0.1,
+                          subsampling_ratio = 0.8,
+                          num_iterations = 10,
+                          output_dir,
+                          verbose = FALSE){
+    
+    S.TM <- Sys.time()
+}    
+    
+
+#' PACIFIC Step 1
+#'
+#' Run the first step of PACIFIC
+#' 
+#' @param data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
+#' @param response Name of the column in data which contains the response values.
+#' @param event Name of the column in 'data' which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is 'NA'.
+#' @param single_features  (for input features) Vector of "single features". Default is 'NA' (for no single feature).
+#' @param interaction_features (for input features) Explicit or list-based specification of "interaction features". Explicit: a vector of the form 'c("A*B", "C*D", ...)'. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is 'NA' (for no interaction feature). Note that 'single_features' cannot overlap with any component in 'interaction_features'.
+#' @param features_to_discretize The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to 'discretization_method'). Default is 'NA' (for no such feature).
+#' @param discretization_method The method for discretization. Either "median" (for median dichotomization), or a 'function' designed to get a numeric vector as input and return a factor vector (of the same length) as output. Default is '"median"'.
+#' @param features_with_flexible_direction The subset of input features (being single or component of interaction) to be allowed to have flexible direction. Applicable only to either factor variables, or numeric variables in 'features_to_discretize'. This means that the reference level of these variables are to be determined by the pipeline in order to optimize the associations with the 'response' Default is 'NA' (for no such feature).
+#' @param features_to_skip_sparsity_prefiltering The subset of input features (being single only) to be skipped for prefiltering by sparsity (within iterations). Default is 'NA' (for no such feature).
+#' @param features_to_skip_univariate_association_prefiltering The subset of input features (being single only) to be skipped for prefiltering by weak associations with the 'response' (within iterations) . Default is NA (for no such feature).
+#' @param sparsity_criterion The criterion used for detecting sparse features in prefiltering by sparsity (within iterations). Applicable to features which involve factor(s). It should be a string of the form '"X_percent"' or '"X_absolute"' (where 'X' is a number), meaning that the cutoff for the minimum size of the feature is either 'X' percent of the size of the input data (within the iteration) or is just 'X', respectively. Default is '"5_percent"'.
+#' @param univariate_p_cutoff Cutoff for the P values of univariate models used for prefiltering by weak association with the 'response'. Default is 0.1.
+#' @param subsampling_ratio The ratio used for subsampling 'data' to make the input data for each iteration. Note that the ratio of events (in survival analysis) or each level of response (if it's categorical) in 'data' is maintained in the subsamplings. Default is '0.8'.
+#' @param num_iterations Number of iterations to run. Default is '10'.
+#' @param output_dir The directory to store the results of iterations.
+#' @param verbose Whether to print progress messages. Default is 'FALSE'.
 PACIFIC_step1 <- function(data,
                           response,
                           event = NA,
