@@ -7,7 +7,7 @@ Dependencies:
 - `glmnet`
 - `survival` (only for survival outcomes)
 
-First clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then open R in the directory you cloned the package in and run `install.packages("PACIFIC", repos = NULL, type = "source")`.
+Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage in a glance
 PACIFIC runs in two steps: 
