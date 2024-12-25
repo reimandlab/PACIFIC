@@ -1,6 +1,6 @@
 # PACIFIC - Predict and Analyze Combinations of Interacting Features In Cancer
 
-This pipeline enables exploring the interactions of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected interactions across the iterations. These candidate interactions are a minimal subset of input interactions with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for highlighting the interactions whose explanatory information is complementary their individual components as well as the baseline variables.
+This pipeline enables exploring the interactions of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected features across the iterations. These candidate features are a minimal subset of input features with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for highlighting the interactions whose explanatory information is complementary their individual components as well as the baseline variables.
 
 ## Installation
 Dependencies: 
