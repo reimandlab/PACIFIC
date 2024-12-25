@@ -1,6 +1,6 @@
 # PACIFIC - Predict and Analyze Combinations of Interacting Features In Cancer
 
-This pipeline enables exploring the interactions of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected interactions across the iterations. These candidate interactions are a minimal subset of input interactions with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further highlighting the interactions whose explanatory information is complementary their individual components as well as the baseline variables.
+This pipeline enables exploring the interactions between two types of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected interactions across the iterations. These candidate interactions are a minimal subset of input interactions with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further highlighting the interactions whose explanatory information is complementary their individual components as well as the baseline variables.
 
 ## Installation
 Dependencies: 
@@ -9,8 +9,14 @@ Dependencies:
 
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
-## Usage in a glance
-PACIFIC runs in two steps: 
+## Usage
+In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set ('feat1'), and the immune cell levels as the second feature set ('feat2').
+
+
+cohort of the first feature set is the mutational status The example below demonstrates the application of PACIFIC when the two feature types are are mutations 
+
+highlights a combination between a genomic and an immune feature 
+ 
 
 * **Step 1:** The function `PACIFIC_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
 
