@@ -24,7 +24,7 @@ current_total_iters <- function(dir){
 #' 
 #' @export
 PACIFIC <- function(data, 
-                    baseline = c("age", "sex", "stage"), 
+                    baseline = NA,
                     feat1, 
                     feat2, 
                     discretization_method = "median", 
