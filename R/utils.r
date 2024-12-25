@@ -226,3 +226,94 @@ wait_for_file_to_stabilize <- function(p){
     } 
 }
 
+plot_km <- function(data_vars, features){
+    
+    max_time <- max(data_vars$time)
+    
+    get_km_df <- function(fit, custom_levels){
+        stopifnot(length(fit$strata) == length(custom_levels))
+        df <- rbind(
+            do.call(rbind, lapply(names(fit$strata), function(lv){
+                strata <- summary(fit)$strata
+                time <- summary(fit)$time[strata == lv]
+                surv <- summary(fit)$surv[strata == lv]
+                n <- sum(strata == lv)
+                data.frame(x = c(0, time, time),
+                           xend = c(time, max_time, time),
+                           y = c(1, surv, 1, surv[-n]),
+                           yend = c(1, surv, surv),
+                           strata = lv,
+                           linewidth = 2)
+            })),
+            subset(data.frame(x = fit$time,
+                              xend = fit$time,
+                              y = pmax(0, fit$surv - 0.01),
+                              yend = pmin(1, fit$surv + 0.01),
+                              strata = rep(names(fit$strata), fit$strata),
+                              linewidth = 1,
+                              n.censor = fit$n.censor), n.censor > 0, select=-n.censor))
+        df$strata <- factor(custom_levels[match(df$strata, names(fit$strata))], levels = rev(custom_levels))
+        return(df)
+    }
+    
+    get_km_plot <- function(this_id){
+        df <- subset(features, id == this_id)
+        stopifnot(nrow(df) > 0)
+        NR <- nrow(df)
+        
+        if(grepl('\\*', this_id) & any(is.na(df))) return(NULL)
+        if(any(is.na(df$feature1_level))) return(NULL)
+        
+        
+        custom_levels <- paste0('Feature ', c('absent', 'present'))
+        colors <- c('black', 'red')
+        names(colors) <- custom_levels
+        
+        km_df <- do.call(rbind, lapply(df$variable, function(v){
+            df <- subset(features, variable == v)
+            stopifnot(1 == nrow(df))
+            
+            isIntr <- grepl('\\*', df$id)
+            fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+            km_df <- cbind(get_km_df(fit, custom_levels),
+                           title = paste0('Feature: ', gsub('\\*', ' * ', df$id),
+                                          '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&',
+                                                                            df$feature2_level),
+                                                              df$feature1_level),
+                                          '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+                                          '\nlogHR: ', signif(df$Effect_size_of_feature, 2),
+                                          '\nP: ', signif(df$P_ANOVA_of_feature, 2)))
+            if(isIntr){
+                km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
+                    v <- df[[paste0('feature',i,'_variable')]]
+                    n <- ifelse(i == 1, 'first', 'second')
+                    fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+                    cbind(get_km_df(fit, custom_levels),
+                          title = paste0('Feature: ', df[[paste0('feature',i)]],
+                                         '\nLevel: ', df[[paste0('feature',i,'_level')]],
+                                         '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+                                         '\nlogHR: ', signif(df[[paste0('Effect_size_of_',n,'_variable')]], 2),
+                                         '\nP: ', signif(df[[paste0('P_ANOVA_of_',n,'_variable')]], 2)))
+                })))
+            }
+            return(km_df)
+        }))
+        
+        km_df$title <- factor(km_df$title, levels = unique(km_df$title))
+        ggplot()+theme_bw()+
+            geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
+            scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
+            scale_y_continuous(limits = c(0, 1))+
+            scale_x_continuous(limits = c(0, max_time))+
+            facet_wrap(~title, nrow = NR)+
+            scale_color_manual(values = colors, name=NULL)+
+            ylab('Survival P')+xlab('Time')+
+            theme(panel.grid = element_blank(),
+                  strip.text.x = element_text(hjust=0),
+                  strip.background.x = element_blank())
+    }
+    
+    km_list <- sapply(unique(features$id), get_km_plot, simplify = FALSE, USE.NAMES = TRUE)
+    
+    return(km_list)
+}

@@ -1,10 +1,5 @@
-#' Current Total Iterations
-#'
-#' Get the total number of iterations currently stored in a directory
-#' 
-#' @param dir WIP
-#' 
-#' @export
+# Get the total number of iterations currently stored in a directory
+# dir WIP
 current_total_iters <- function(dir){
     r <- list.files(dir, pattern = 'step1-results')
     r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
@@ -13,67 +8,179 @@ current_total_iters <- function(dir){
 }
 
 
-#' PACIFIC Step 1
-#'
-#' Run the first step of PACIFIC
+#' Run PACIFIC feature selection pipeline
 #' 
-#' @param data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
-#' @param response Name of the column in data which contains the response values.
-#' @param event Name of the column in 'data' which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is 'NA'.
-#' @param single_features  (for input features) Vector of "single features". Default is 'NA' (for no single feature).
-#' @param interaction_features (for input features) Explicit or list-based specification of "interaction features". Explicit: a vector of the form 'c("A*B", "C*D", ...)'. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is 'NA' (for no interaction feature). Note that 'single_features' cannot overlap with any component in 'interaction_features'.
-#' @param features_to_discretize The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to 'discretization_method'). Default is 'NA' (for no such feature).
-#' @param discretization_method The method for discretization. Either "median" (for median dichotomization), or a 'function' designed to get a numeric vector as input and return a factor vector (of the same length) as output. Default is '"median"'.
-#' @param features_with_flexible_direction The subset of input features (being single or component of interaction) to be allowed to have flexible direction. Applicable only to either factor variables, or numeric variables in 'features_to_discretize'. This means that the reference level of these variables are to be determined by the pipeline in order to optimize the associations with the 'response' Default is 'NA' (for no such feature).
-#' @param features_to_skip_sparsity_prefiltering The subset of input features (being single only) to be skipped for prefiltering by sparsity (within iterations). Default is 'NA' (for no such feature).
-#' @param features_to_skip_univariate_association_prefiltering The subset of input features (being single only) to be skipped for prefiltering by weak associations with the 'response' (within iterations) . Default is NA (for no such feature).
-#' @param sparsity_criterion The criterion used for detecting sparse features in prefiltering by sparsity (within iterations). Applicable to features which involve factor(s). It should be a string of the form '"X_percent"' or '"X_absolute"' (where 'X' is a number), meaning that the cutoff for the minimum size of the feature is either 'X' percent of the size of the input data (within the iteration) or is just 'X', respectively. Default is '"5_percent"'.
-#' @param univariate_p_cutoff Cutoff for the P values of univariate models used for prefiltering by weak association with the 'response'. Default is 0.1.
-#' @param subsampling_ratio The ratio used for subsampling 'data' to make the input data for each iteration. Note that the ratio of events (in survival analysis) or each level of response (if it's categorical) in 'data' is maintained in the subsamplings. Default is '0.8'.
-#' @param num_iterations Number of iterations to run. Default is '10'.
-#' @param output_dir The directory to store the results of iterations.
-#' @param verbose Whether to print progress messages. Default is 'FALSE'.
-PACIFIC_step1 <- function(data,
-                          response,
-                          event = NA,
-                          single_features = NA,
-                          interaction_features = NA,
-                          features_to_discretize = NA,
-                          discretization_method = 'median',
-                          features_with_flexible_direction = NA,
-                          features_to_skip_sparsity_prefiltering = NA,
-                          features_to_skip_univariate_association_prefiltering = NA,
-                          sparsity_criterion = '5_percent',
-                          univariate_p_cutoff = 0.1,
-                          subsampling_ratio = 0.8,
-                          num_iterations = 10,
-                          output_dir,
-                          verbose = FALSE){
+#' @param data data.frame. The table of input data with samples in rows and features in columns. 
+#' @param baseline character vector. The baseline clinical features as columns of "data". Default: c("age", "sex", "stage", "grade"). Put NA for empty set.
+#' @param feat1 character vector. The feature set 1 as columns of "data".
+#' @param feat2 character vector. The feature set 2 as columns of "data". Default: NA (for empty set)
+#' @param discretization_method character. Continuous features are binarized using this method within the feature selection loops. Default: "median"
+#' @param sparsity_threshold character. Sparse features are called using this threshold within the feature selection loops. Default: "5_percent"
+#' @param univariate_p_cutoff numeric. Features weakly associated with survival are called using this cutoff for P-value of univariate CoxPH models within the feature selection loops. Default: 0.1
+#' @param subsampling_ratio numeric. Ratio used for subsampling the "data" for the feature selection loops. Default: 0.8
+#' @param num_iterations numeric. How many iterations of the feature selection loop to run. Default: 10
+#' @param output_dir character. The directory to store the results.
+#' @param verbose character. Whether to print progress messages. Default: FALSE
+#' 
+#' @export
+PACIFIC <- function(data, 
+                    baseline = c("age", "sex", "stage"), 
+                    feat1, 
+                    feat2, 
+                    discretization_method = "median", 
+                    sparsity_threshold = "5_percent", 
+                    univariate_p_cutoff = 0.1, 
+                    subsampling_ratio = 0.8, 
+                    num_iterations = 10, 
+                    EN_cutoff = 50,
+                    output_dir, 
+                    verbose = TRUE){
     
-    S.TM <- Sys.time()
+    # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    
+    # validate arg data
+    if(! is.data.frame(data)) stop('"data" must be a data.frame or an instance of a class extended from data.frame')
+    if(! 'time' %in% colnames(data)) stop('"data" must contain column "time" for survival time value')
+    if(! 'event' %in% colnames(data)) stop('"data" must contain column "event" for survival event status')
+    
+    # validate arg baseline
+    if(identical(NA, baseline)) baseline <- character(0)
+    if(! is.character(baseline)) stop('"baseline" must be a character vector')
+    if(! all(baseline %in% colnames(data))) stop('all "baseline" features must be in "data" columns')
+    
+    # validate arg feat1
+    if(! is.character(feat1)) stop('"feat1" must be a character vector')
+    if(length(feat1) == 0) stop('"feat1" must not be empty')
+    if(! all(feat1 %in% colnames(data))) stop('all "feat1" features must be in "data" columns')
+    
+    # validate arg feat2
+    if(! is.character(feat2)) stop('"feat2" must be a character vector')
+    if(length(feat2) == 0) stop('"feat2" must not be empty')
+    if(! all(feat2 %in% colnames(data))) stop('all "feat2" features must be in "data" columns')
+    
+    # set single_features and interaction_features
+    single_features <- baseline
+    interaction_features <- list(feat1, feat2)
+    
+    # prefiltering (of any type) is only skipped for baseline
+    features_to_skip_sparsity_prefiltering <- baseline
+    features_to_skip_univariate_association_prefiltering <- baseline
+    
+    # any numeric feature will go to features_to_discretize & features_with_flexible_direction
+    # any other feature must be binary factor
+    features_to_discretize <- character(0)
+    features_with_flexible_direction <- character(0)
+    for(f in c(feat1, feat2)){
+        values <- data[[f]]
+        if(is.numeric(values)){
+            features_to_discretize <- c(features_to_discretize, f)
+            features_with_flexible_direction <- c(features_with_flexible_direction, f)
+        } else {
+            err <- 'features in feat1 & feat2 must be either numeric or factor with two levels'
+            if(! is.factor(values)) stop(err)
+            if(length(levels(values)) != 2) stop(err)
+        }
+    }
+    
+    # throw error if output_dir already exists, otherwise create it
+    if(dir.exists(output_dir)) stop('"output_dir" already exists')
+    dir.create(output_dir, recursive = T, showWarnings = F)
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+   
+    PACIFIC_step1(data = data,
+                  response = 'time',
+                  event = 'event',
+                  single_features = single_features,
+                  interaction_features = interaction_features,
+                  features_to_discretize = features_to_discretize,
+                  features_with_flexible_direction = features_with_flexible_direction,
+                  features_to_skip_sparsity_prefiltering = features_to_skip_sparsity_prefiltering,
+                  features_to_skip_univariate_association_prefiltering = features_to_skip_univariate_association_prefiltering,
+                  num_iterations = num_iterations, 
+                  output_dir = output_dir, 
+                  verbose = verbose)
+    # -------------------------------------------------------------------------------------------
+    features <- PACIFIC_step2(step1_output_dir = output_dir, 
+                              anova_baseline = baseline, 
+                              EN_cutoff = EN_cutoff)
+    # -------------------------------------------------------------------------------------------
+    features <- features[grepl('\\*', features$id),]
+    # -------------------------------------------------------------------------------------------
+    if(nrow(features) == 0){
+        cat('No interaction feature passed the selection cutoff\n')
+        return(NULL)
+    }
+    # -------------------------------------------------------------------------------------------
+    # FDR
+    # -------------------------------------------------------------------------------------------
+    if(nrow(features) == 0){
+        cat('No significant interaction feature found\n')
+        return(NULL)
+    }
+    # -------------------------------------------------------------------------------------------
+    data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
+    colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
+    colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
+    km_list <- plot_km(data_vars, features)
+    # -------------------------------------------------------------------------------------------
+    rownames(features) <- NULL
+    
+    exclude_cols <- c('type', 'variable',
+                      'feature1', 'feature2',
+                      'feature1_variable', 'feature2_variable')
+    features <- features[, setdiff(colnames(features), exclude_cols)]
+    
+    colnames(features)[colnames(features) == 'id'] <- 'intr'
+    colnames(features)[colnames(features) == 'feature1_level'] <- 'feat1_level'
+    colnames(features)[colnames(features) == 'feature2_level'] <- 'feat2_level'
+    
+    colnames(features)[colnames(features) == 'P_ANOVA_of_feature'] <- 'intr_P'
+    colnames(features)[colnames(features) == 'P_ANOVA_of_feature_controlled_for_first_variable'] <- 'intr_P_C1'
+    colnames(features)[colnames(features) == 'P_ANOVA_of_feature_controlled_for_second_variable'] <- 'intr_P_C2'
+    colnames(features)[colnames(features) == 'P_ANOVA_of_feature_controlled_for_both_variables'] <- 'intr_P_C3'
+    
+    colnames(features)[colnames(features) == 'P_ANOVA_of_first_variable'] <- 'feat1_P'
+    
+    colnames(features)[colnames(features) == 'P_ANOVA_of_second_variable'] <- 'feat2_P'
+    
+    colnames(features)[colnames(features) == 'Effect_size_of_feature'] <- 'intr_logHR'
+    colnames(features)[colnames(features) == 'Effect_size_lower.95_of_feature'] <- 'intr_logHR_lower95'
+    colnames(features)[colnames(features) == 'Effect_size_upper.95_of_feature'] <- 'intr_logHR_upper95'
+    
+    colnames(features)[colnames(features) == 'Effect_size_of_first_variable'] <- 'feat1_logHR'
+    colnames(features)[colnames(features) == 'Effect_size_lower.95_of_first_variable'] <- 'feat1_logHR_lower95'
+    colnames(features)[colnames(features) == 'Effect_size_upper.95_of_first_variable'] <- 'feat1_logHR_upper95'
+    
+    colnames(features)[colnames(features) == 'Effect_size_of_second_variable'] <- 'feat2_logHR'
+    colnames(features)[colnames(features) == 'Effect_size_lower.95_of_second_variable'] <- 'feat2_logHR_lower95'
+    colnames(features)[colnames(features) == 'Effect_size_upper.95_of_second_variable'] <- 'feat2_logHR_upper95'
+    
+    # -------------------------------------------------------------------------------------------
+    results <- list(top_interactions=features, km_list=km_list)
+    
+    invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
+    saveRDS(results, paste0(output_dir, '/results.rds'))
+    
+    return(results)
 }    
     
 
-#' PACIFIC Step 1
-#'
-#' Run the first step of PACIFIC
-#' 
-#' @param data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
-#' @param response Name of the column in data which contains the response values.
-#' @param event Name of the column in 'data' which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is 'NA'.
-#' @param single_features  (for input features) Vector of "single features". Default is 'NA' (for no single feature).
-#' @param interaction_features (for input features) Explicit or list-based specification of "interaction features". Explicit: a vector of the form 'c("A*B", "C*D", ...)'. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is 'NA' (for no interaction feature). Note that 'single_features' cannot overlap with any component in 'interaction_features'.
-#' @param features_to_discretize The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to 'discretization_method'). Default is 'NA' (for no such feature).
-#' @param discretization_method The method for discretization. Either "median" (for median dichotomization), or a 'function' designed to get a numeric vector as input and return a factor vector (of the same length) as output. Default is '"median"'.
-#' @param features_with_flexible_direction The subset of input features (being single or component of interaction) to be allowed to have flexible direction. Applicable only to either factor variables, or numeric variables in 'features_to_discretize'. This means that the reference level of these variables are to be determined by the pipeline in order to optimize the associations with the 'response' Default is 'NA' (for no such feature).
-#' @param features_to_skip_sparsity_prefiltering The subset of input features (being single only) to be skipped for prefiltering by sparsity (within iterations). Default is 'NA' (for no such feature).
-#' @param features_to_skip_univariate_association_prefiltering The subset of input features (being single only) to be skipped for prefiltering by weak associations with the 'response' (within iterations) . Default is NA (for no such feature).
-#' @param sparsity_criterion The criterion used for detecting sparse features in prefiltering by sparsity (within iterations). Applicable to features which involve factor(s). It should be a string of the form '"X_percent"' or '"X_absolute"' (where 'X' is a number), meaning that the cutoff for the minimum size of the feature is either 'X' percent of the size of the input data (within the iteration) or is just 'X', respectively. Default is '"5_percent"'.
-#' @param univariate_p_cutoff Cutoff for the P values of univariate models used for prefiltering by weak association with the 'response'. Default is 0.1.
-#' @param subsampling_ratio The ratio used for subsampling 'data' to make the input data for each iteration. Note that the ratio of events (in survival analysis) or each level of response (if it's categorical) in 'data' is maintained in the subsamplings. Default is '0.8'.
-#' @param num_iterations Number of iterations to run. Default is '10'.
-#' @param output_dir The directory to store the results of iterations.
-#' @param verbose Whether to print progress messages. Default is 'FALSE'.
+# data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
+# response Name of the column in data which contains the response values.
+# event Name of the column in 'data' which contains the event status values for survival outcomes. This column must contain only 0 and 1. Default is 'NA'.
+# single_features  (for input features) Vector of "single features". Default is 'NA' (for no single feature).
+# interaction_features (for input features) Explicit or list-based specification of "interaction features". Explicit: a vector of the form 'c("A*B", "C*D", ...)'. List-based: list of two vectors of single components for all two-way combinations as interaction features. Default is 'NA' (for no interaction feature). Note that 'single_features' cannot overlap with any component in 'interaction_features'.
+# features_to_discretize The subset of input features (being single or component of interaction) to be discretized, i.e. to be converted from numeric to categorical (subject to 'discretization_method'). Default is 'NA' (for no such feature).
+# discretization_method The method for discretization. Either "median" (for median dichotomization), or a 'function' designed to get a numeric vector as input and return a factor vector (of the same length) as output. Default is '"median"'.
+# features_with_flexible_direction The subset of input features (being single or component of interaction) to be allowed to have flexible direction. Applicable only to either factor variables, or numeric variables in 'features_to_discretize'. This means that the reference level of these variables are to be determined by the pipeline in order to optimize the associations with the 'response' Default is 'NA' (for no such feature).
+# features_to_skip_sparsity_prefiltering The subset of input features (being single only) to be skipped for prefiltering by sparsity (within iterations). Default is 'NA' (for no such feature).
+# features_to_skip_univariate_association_prefiltering The subset of input features (being single only) to be skipped for prefiltering by weak associations with the 'response' (within iterations) . Default is NA (for no such feature).
+# sparsity_criterion The criterion used for detecting sparse features in prefiltering by sparsity (within iterations). Applicable to features which involve factor(s). It should be a string of the form '"X_percent"' or '"X_absolute"' (where 'X' is a number), meaning that the cutoff for the minimum size of the feature is either 'X' percent of the size of the input data (within the iteration) or is just 'X', respectively. Default is '"5_percent"'.
+# univariate_p_cutoff Cutoff for the P values of univariate models used for prefiltering by weak association with the 'response'. Default is 0.1.
+# subsampling_ratio The ratio used for subsampling 'data' to make the input data for each iteration. Note that the ratio of events (in survival analysis) or each level of response (if it's categorical) in 'data' is maintained in the subsamplings. Default is '0.8'.
+# num_iterations Number of iterations to run. Default is '10'.
+# output_dir The directory to store the results of iterations.
+# verbose Whether to print progress messages. Default is 'FALSE'.
 PACIFIC_step1 <- function(data,
                           response,
                           event = NA,
@@ -417,16 +524,9 @@ PACIFIC_step1 <- function(data,
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
 }
 
-#' PACIFIC Step 2
-#'
-#' Run the second step of PACIFIC
-#' @param step1_output_dir WIP
-#' @param EN_cutoff WIP
-#' @param anova_baseline WIP
-#' @return WIP
-#' @examples 
-#' WIP
-#' @export
+# step1_output_dir WIP
+# EN_cutoff WIP
+# anova_baseline WIP
 PACIFIC_step2 <- function(step1_output_dir, 
                           EN_cutoff = 50,
                           anova_baseline = NA, 
@@ -473,7 +573,7 @@ PACIFIC_step2 <- function(step1_output_dir,
     for(b in anova_baseline){
         if(! class(data[[b]]) %in% c('factor', 'numeric')) stop('anova_baseline variables must be numeric or factor in "data"')
         lv <- NA; if(class(data[[b]]) == 'factor') lv <- levels(data[[b]])[-1]
-        if(length(lv) == 0) stop('a factor as an anova_baseline must have more than two levels')
+        if(length(lv) == 0) stop('a factor as an anova_baseline must have more than one level')
         for(l in lv){
             v <- get_variable_of_single_feature(b, l)
             if(!is.na(v)){
@@ -502,14 +602,19 @@ PACIFIC_step2 <- function(step1_output_dir,
                    P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V1), X), NA),
                    P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V2), X), NA),
                    P_ANOVA_of_feature_controlled_for_both_variables = ifelse(isIntr, p_anova(family, data_vars, c(B, V1, V2), X), NA),
+                   
                    P_ANOVA_of_first_variable = ifelse(isIntr, p_anova(family, data_vars, B, V1), NA),
+                   
                    P_ANOVA_of_second_variable = ifelse(isIntr, p_anova(family, data_vars, B, V2), NA),
+                   
                    Effect_size_of_feature = effect_size(family, data_vars, B, X, 'value'),
                    Effect_size_lower.95_of_feature = effect_size(family, data_vars, B, X, 'lower'),
                    Effect_size_upper.95_of_feature = effect_size(family, data_vars, B, X, 'upper'),
+                   
                    Effect_size_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'value'), NA),
-                   Effect_size_upper.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'upper'), NA),
                    Effect_size_lower.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'lower'), NA),
+                   Effect_size_upper.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'upper'), NA),
+                   
                    Effect_size_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'value'), NA),
                    Effect_size_lower.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'lower'), NA),
                    Effect_size_upper.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'upper'), NA))
@@ -604,14 +709,19 @@ PACIFIC_step2 <- function(step1_output_dir,
     #     km_plots <- NULL
     # }
     # ---------------------------------------------------------------------------------------------
-    exclude_cols <- c('type', 'variable', 
-                      'feature1', 'feature2',
-                      'feature1_variable', 'feature2_variable')
-    features <- features[, setdiff(colnames(features), exclude_cols)]
-    colnames(features)[colnames(features) == 'id'] <- 'feature'
-    colnames(features)[colnames(features) == 'feature1_level'] <- 'level_of_first_variable'
-    colnames(features)[colnames(features) == 'feature2_level'] <- 'level_of_second_variable'
-    rownames(features) <- NULL
+    
+    # exclude_cols <- c('type', 'variable', 
+    #                   'feature1', 'feature2',
+    #                   'feature1_variable', 'feature2_variable')
+    # features <- features[, setdiff(colnames(features), exclude_cols)]
+    # colnames(features)[colnames(features) == 'id'] <- 'feature'
+    # colnames(features)[colnames(features) == 'feature1_level'] <- 'level_of_first_variable'
+    # colnames(features)[colnames(features) == 'feature2_level'] <- 'level_of_second_variable'
+    # rownames(features) <- NULL
+    
     # ---------------------------------------------------------------------------------------------
-    return(list(features = features))#, km_plots = km_plots))
+    
+    # return(list(features = features))#, km_plots = km_plots))
+    
+    return(features)
 }
