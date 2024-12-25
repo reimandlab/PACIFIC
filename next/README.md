@@ -91,7 +91,7 @@ The top candidate is "ERBB4" mutation. View the KM plot of this feature:
 # options(repr.plot.width = 4.4, repr.plot.height = 3.5)
 results$km_plots[["ERBB4"]]
 ```
-<img src="../inst/extdata/km1.jpg" width="50%">
+<img src="inst/extdata/km1.jpg" width="50%">
 
 ## Example run 2:
 Let's see the more complex aspects of PACIFIC. Here, using the example dataset, we are interested in finding prognostic interactions between mutation and immune features while controlling for the effect of baseline clinical variables. This problem is formulated in the IGX paper based on the following design choices:
@@ -193,7 +193,7 @@ The top candidate is "KMT2D*Monocytes" which is an "interaction feature". View t
 # options(repr.plot.width = 9, repr.plot.height = 3.5)
 results$km_plots[["KMT2D*Monocytes"]]
 ```
-<img src="../inst/extdata/km2.jpg" width="100%">
+<img src="inst/extdata/km2.jpg" width="100%">
 
 
 ## Arguments 
