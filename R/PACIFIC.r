@@ -41,7 +41,7 @@ PACIFIC <- function(data,
     # validate arg data
     if(! is.data.frame(data)) stop('"data" must be a data.frame or an instance of a class extended from data.frame')
     if(! 'time' %in% colnames(data)) stop('"data" must contain column "time" for survival time value')
-    if(! 'event' %in% colnames(data)) stop('"data" must contain column "event" for survival event status')
+    if(! 'status' %in% colnames(data)) stop('"data" must contain column "status" for survival event status')
     
     # validate arg baseline
     if(identical(NA, baseline)) baseline <- character(0)
@@ -89,7 +89,7 @@ PACIFIC <- function(data,
    
     PACIFIC_step1(data = data,
                   response = 'time',
-                  event = 'event',
+                  event = 'status',
                   single_features = single_features,
                   interaction_features = interaction_features,
                   features_to_discretize = features_to_discretize,
