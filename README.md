@@ -10,7 +10,7 @@ Dependencies:
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage
-In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set (`feat1`), and the immune cell levels as the second feature set (`feat2`). For simplicity, we use a **subset** of each feature type in this example. We also set the baseline variables as patient age, sex, and tumor stage.
+In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set (`feat1`), and the immune cell levels as the second feature set (`feat2`). For simplicity, we use a **subset** of each feature type in this example. We also set the `baseline` variables as patient age, sex, and tumor stage.
 
 ```R
 library(PACIFIC)
@@ -56,6 +56,35 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #3:        0.001416327                  0.043618140  0.07765524              0.000000000
 #4:        0.003790870                  0.003950511  0.03094862              0.000000000
 #5:        0.036007745                  0.000000000  0.17967422              0.040558222
+
+####
+# Apply PACIFIC to the data using the defined features (using the default settings):
+####
+
+results <- PACIFIC(data = data,
+                   baseline = baseline,
+                   feat1 = feat1,
+                   feat2 = feat2,
+                   num_iterations = 10,
+                   output_dir = 'out')
+
+# ----------------------------------------------------
+# PACIFIC step 1:
+# preprocessing ... 0.07376504 secs 
+# iteration 1/10 : No feature selected by Elastic net. 0.3001399 secs 
+# iteration 2/10 : 16 features selected by Elastic net. 0.298044 secs 
+# iteration 3/10 : 2 features selected by Elastic net. 0.276397 secs 
+# iteration 4/10 : 14 features selected by Elastic net. 0.2564099 secs 
+# iteration 5/10 : 12 features selected by Elastic net. 0.2716498 secs 
+# iteration 6/10 : 13 features selected by Elastic net. 0.2608631 secs 
+# iteration 7/10 : 14 features selected by Elastic net. 0.2672498 secs 
+# iteration 8/10 : 24 features selected by Elastic net. 0.3149059 secs 
+# iteration 9/10 : 21 features selected by Elastic net. 0.2895541 secs 
+# iteration 10/10 : 16 features selected by Elastic net. 0.291364 secs 
+# elapsed time: 2.92115 secs 
+# ----------------------------------------------------
+# PACIFIC step 2:
+# elapsed time: 0.519068 secs 
 ```
 
 
