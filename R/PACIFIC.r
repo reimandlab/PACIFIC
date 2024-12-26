@@ -163,6 +163,7 @@ PACIFIC <- function(data,
     invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
     saveRDS(results, paste0(output_dir, '/results.rds'))
     
+    F.TM <- Sys.time()
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
     return(results)
 }    
