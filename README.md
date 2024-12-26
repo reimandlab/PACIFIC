@@ -5,7 +5,7 @@ This pipeline enables exploring the interactions between two types of multi-omic
 ## Installation
 Dependencies: 
 - `glmnet`
-- `survival` (if the outcomes are survival)
+- `survival`
 
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
