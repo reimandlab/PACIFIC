@@ -29,8 +29,7 @@ data <- readRDS(fname_example_dataset)
 baseline <- c("age", "sex", "stage")
 feat1 <- c("TP53", "KMT2D", "CDKN2A", "KRAS")
 feat2 <- c("B_cells_memory", "Plasma_cells", "Macrophages_M1", "Macrophages_M2", 
-           "Monocytes", "NK_cells_activated", "T_cells_CD4_memory_activated", 
-           "T_cells_CD8","T_cells_regulatory_Tregs")
+           "Monocytes", "NK_cells_activated", "T_cells_CD8","T_cells_regulatory_Tregs")
 
 ####
 # View a few rows of the data with the selected columns:
@@ -50,12 +49,12 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #3:     0.00000000   0.01028084     0.05054219      0.3876288 0.003981384
 #4:     0.00000000   0.04098218     0.09988443      0.4618061 0.000000000
 #5:     0.00000000   0.07996814     0.10241677      0.1191702 0.021436310
-#   NK_cells_activated T_cells_CD4_memory_activated T_cells_CD8 T_cells_regulatory_Tregs
-#1:        0.000000000                  0.011845856  0.10903708              0.003766431
-#2:        0.000000000                  0.024360849  0.17287965              0.046420556
-#3:        0.001416327                  0.043618140  0.07765524              0.000000000
-#4:        0.003790870                  0.003950511  0.03094862              0.000000000
-#5:        0.036007745                  0.000000000  0.17967422              0.040558222
+#   NK_cells_activated T_cells_CD8 T_cells_regulatory_Tregs
+#1:        0.000000000  0.10903708              0.003766431
+#2:        0.000000000  0.17287965              0.046420556
+#3:        0.001416327  0.07765524              0.000000000
+#4:        0.003790870  0.03094862              0.000000000
+#5:        0.036007745  0.17967422              0.040558222
 
 
 ####
