@@ -131,5 +131,5 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
    - `intr_P_C3`: interaction *vs.* baseline + feat1 + feat2
 - By default, each feature in `feat1` and `feat2` is treated according to the following rules:
    - If it is categorical, it must be `factor` with two levels. In this case, the second level is considered as the "active" state. In other words, only the second level may contribute to any potential interaction.
-   - If it is continuous (`numeric`), it is converted into high or low levels (within each iteraction of feature selection) based on `> median` or `<= median`, respectively. In this case, both high and low levels may contribute to any potential interaction.
+   - If it is continuous (`numeric`), it is converted into high or low levels (within each iteration of feature selection) based on `> median` or `<= median`, respectively. In this case, both high and low levels may contribute to any potential interaction.
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
