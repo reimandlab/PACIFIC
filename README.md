@@ -95,22 +95,26 @@ The returned `results` is saved in ".RDS" format in `output_dir`. View the top i
 ```R
 results$top_interactions
 
-#                 intr feat1_level                   feat2_level EN_score       intr_P
-#1:    KMT2D*Monocytes     mutated            higher_than_median      100 0.0004387153
-#2: CDKN2A*T_cells_CD8     mutated lower_than_or_equal_to_median       80 0.0659434636
-#3:     TP53*Monocytes     mutated lower_than_or_equal_to_median       60 0.0103065474
-#      intr_P_C1   intr_P_C2   intr_P_C3   feat1_P    feat2_P intr_logHR
-#1: 0.0002226526 0.001773958 0.001535063 0.3606967 0.07902884  0.8232534
-#2: 0.1744545811 0.096514456 0.295044751 0.2137792 0.36907611  0.4981860
-#3: 0.0337056835 0.047693554 0.121954591 0.1398141 0.07902884 -0.3784980
-#   intr_logHR_lower95 intr_logHR_upper95 feat1_logHR feat1_logHR_lower95
-#1:         0.40706933         1.23943739   0.1575879          -0.1754631
-#2:        -0.00184557         0.99821767   0.2442130          -0.1311699
-#3:        -0.67170399        -0.08529202  -0.2483703          -0.5713498
-#   feat1_logHR_upper95 feat2_logHR feat2_logHR_lower95 feat2_logHR_upper95
-#1:          0.49063898   0.2555551         -0.03018218          0.54129234
-#2:          0.61959601   0.1291237         -0.15292406          0.41117153
-#3:          0.07460914  -0.2555551         -0.54129234          0.03018218
+#                 intr feat1_level                   feat2_level EN_score
+#1:    KMT2D*Monocytes     mutated            higher_than_median      100
+#2: CDKN2A*T_cells_CD8     mutated lower_than_or_equal_to_median       80
+#3:     TP53*Monocytes     mutated lower_than_or_equal_to_median       60
+#         intr_P    intr_P_C1   intr_P_C2   intr_P_C3   feat1_P    feat2_P
+#1: 0.0004387153 0.0002226526 0.001773958 0.001535063 0.3606967 0.07902884
+#2: 0.0659434636 0.1744545811 0.096514456 0.295044751 0.2137792 0.36907611
+#3: 0.0103065474 0.0337056835 0.047693554 0.121954591 0.1398141 0.07902884
+#   intr_logHR intr_logHR_lower95 intr_logHR_upper95 feat1_logHR
+#1:  0.8232534         0.40706933         1.23943739   0.1575879
+#2:  0.4981860        -0.00184557         0.99821767   0.2442130
+#3: -0.3784980        -0.67170399        -0.08529202  -0.2483703
+#   feat1_logHR_lower95 feat1_logHR_upper95 feat2_logHR feat2_logHR_lower95
+#1:          -0.1754631          0.49063898   0.2555551         -0.03018218
+#2:          -0.1311699          0.61959601   0.1291237         -0.15292406
+#3:          -0.5713498          0.07460914  -0.2555551         -0.54129234
+#   feat2_logHR_upper95
+#1:          0.54129234
+#2:          0.41117153
+#3:          0.03018218
 ```
 
 The KM plots for the top interaction is stored as a named list in the `$km_plot_list` facet of `results`. View the KM plots for "KMT2D*Monocytes" interaction:
