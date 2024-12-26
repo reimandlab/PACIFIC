@@ -10,8 +10,53 @@ Dependencies:
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage
-In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set (`feat1`), and the immune cell levels as the second feature set (`feat2`). For simplicity, we use a subset of each feature type and manually input them in this example. We also set the baseline variables as patient age, sex, and tumor stage.
+In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set (`feat1`), and the immune cell levels as the second feature set (`feat2`). For simplicity, we use a **subset** of each feature type in this example. We also set the baseline variables as patient age, sex, and tumor stage.
 
+```R
+library(PACIFIC)
+
+####
+# Run an example using the dataset included in the PACIFIC package. 
+####
+
+fname_example_dataset <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
+data <- readRDS(fname_example_dataset)
+
+####
+# Define the baseline and the two sets of features.
+####
+
+baseline <- c("age", "sex", "stage")
+feat1 <- c("TP53", "KMT2D", "CDKN2A", "KRAS")
+feat2 <- c("B_cells_memory", "Plasma_cells", "Macrophages_M1", "Macrophages_M2", 
+           "Monocytes", "NK_cells_activated", "T_cells_CD4_memory_activated", 
+           "T_cells_CD8","T_cells_regulatory_Tregs")
+
+####
+# View a few rows of the data with the selected columns:
+####
+
+data[1:5 , c("time", "status", baseline, feat1, feat2)]
+
+#   time status age    sex    stage    TP53       KMT2D      CDKN2A        KRAS
+#1:  371      1  67   MALE  Stage_I mutated not_mutated not_mutated not_mutated
+#2:  136      1  72   MALE  Stage_I mutated     mutated     mutated not_mutated
+#3: 2304      1  77 FEMALE  Stage_I mutated not_mutated not_mutated not_mutated
+#4: 3650      0  74   MALE  Stage_I mutated not_mutated not_mutated not_mutated
+#5:  146      1  81   MALE Stage_II mutated     mutated not_mutated not_mutated
+#   B_cells_memory Plasma_cells Macrophages_M1 Macrophages_M2   Monocytes
+#1:     0.00000000   0.26404279     0.09956779      0.1293732 0.038421812
+#2:     0.01379474   0.10389209     0.03997567      0.2588654 0.028434340
+#3:     0.00000000   0.01028084     0.05054219      0.3876288 0.003981384
+#4:     0.00000000   0.04098218     0.09988443      0.4618061 0.000000000
+#5:     0.00000000   0.07996814     0.10241677      0.1191702 0.021436310
+#   NK_cells_activated T_cells_CD4_memory_activated T_cells_CD8 T_cells_regulatory_Tregs
+#1:        0.000000000                  0.011845856  0.10903708              0.003766431
+#2:        0.000000000                  0.024360849  0.17287965              0.046420556
+#3:        0.001416327                  0.043618140  0.07765524              0.000000000
+#4:        0.003790870                  0.003950511  0.03094862              0.000000000
+#5:        0.036007745                  0.000000000  0.17967422              0.040558222
+```
 
 
 * **Step 1:** The function `PACIFIC_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
