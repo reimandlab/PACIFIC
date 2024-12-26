@@ -57,6 +57,7 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #4:        0.003790870                  0.003950511  0.03094862              0.000000000
 #5:        0.036007745                  0.000000000  0.17967422              0.040558222
 
+
 ####
 # Apply PACIFIC to the data using the defined features (using the default settings):
 ####
@@ -87,6 +88,32 @@ results <- PACIFIC(data = data,
 # elapsed time: 0.519068 secs 
 ```
 
+The returned `results` is saved as in ".RDS" format in `output_dir`. 
+View the top interactions (frequently selected in the iterations) with the `$top_interactions` facet.
+```R
+results$top_interactions
+
+#                 intr feat1_level                   feat2_level EN_score       intr_P
+#1:    KMT2D*Monocytes     mutated            higher_than_median       90 0.0004387153
+#2: CDKN2A*T_cells_CD8     mutated lower_than_or_equal_to_median       80 0.0659434636
+#3:     TP53*Monocytes     mutated lower_than_or_equal_to_median       70 0.0103065474
+#4:   TP53*T_cells_CD8     mutated            higher_than_median       60 0.1290463476
+#      intr_P_C1   intr_P_C2   intr_P_C3   feat1_P    feat2_P intr_logHR
+#1: 0.0002226526 0.001773958 0.001535063 0.3606967 0.07902884  0.8232534
+#2: 0.1744545811 0.096514456 0.295044751 0.2137792 0.36907611  0.4981860
+#3: 0.0337056835 0.047693554 0.121954591 0.1398141 0.07902884 -0.3784980
+#4: 0.3301653630 0.166982093 0.538540291 0.1398141 0.36907611 -0.2237408
+#   intr_logHR_lower95 intr_logHR_upper95 feat1_logHR feat1_logHR_lower95
+#1:         0.40706933         1.23943739   0.1575879          -0.1754631
+#2:        -0.00184557         0.99821767   0.2442130          -0.1311699
+#3:        -0.67170399        -0.08529202  -0.2483703          -0.5713498
+#4:        -0.51528819         0.06780659  -0.2483703          -0.5713498
+#   feat1_logHR_upper95 feat2_logHR feat2_logHR_lower95 feat2_logHR_upper95
+#1:          0.49063898   0.2555551         -0.03018218          0.54129234
+#2:          0.61959601   0.1291237         -0.15292406          0.41117153
+#3:          0.07460914  -0.2555551         -0.54129234          0.03018218
+#4:          0.07460914  -0.1291237         -0.41117153          0.15292406
+```
 
 * **Step 1:** The function `PACIFIC_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
 
