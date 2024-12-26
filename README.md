@@ -10,7 +10,7 @@ Dependencies:
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage
-In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the mutational status of driver genes as the first feature set (`feat1`), and the immune cell levels as the second feature set (`feat2`). For simplicity, we use a **subset** of each feature type in this example. We also set the `baseline` variables as patient age, sex, and tumor stage.
+In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the first feature set (`feat1`) as the mutational status of driver genes, the second feature set (`feat2`) as the immune cell levels, and the `baseline` variables as patient age, sex, and tumor stage. For simplicity, we use a **subset** of available features for the two feature sets in this example.
 
 ```R
 library(PACIFIC)
