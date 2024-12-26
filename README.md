@@ -125,10 +125,10 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 
 ### Notes
 - We recommend highlighting only the interactions for which all of the following ANOVA tests are significant after FDR correction (available in the `results` table):
-   - `intr_P`: interaction VS baseline
-   - `intr_P_C1`: interaction VS baseline + feat1
-   - `intr_P_C2`: interaction VS baseline + feat2
-   - `intr_P_C3`: interaction VS baseline + feat1 + feat2
+   - `intr_P`: interaction *vs.* baseline
+   - `intr_P_C1`: interaction *vs.* baseline + feat1
+   - `intr_P_C2`: interaction *vs.* baseline + feat2
+   - `intr_P_C3`: interaction *vs.* baseline + feat1 + feat2
 - By default, each feature in feat1 and feat2 is treated according the following instructions:
    - If it is categorical, it must be `factor` with two levels. In this case, the first and second levels are considered as 0 and 1, respectively. In other words, only the second level may contribute to any potential interaction.
    - If it is continuous (`numeric`), it will be converted into high or low levels (within each iteraction of feature selection) based on `> median` or `<= median`, respectively. In this case, both high and low levels may contribute to any potential interaction.
