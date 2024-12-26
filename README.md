@@ -117,7 +117,7 @@ results$top_interactions
 #3:          0.03018218
 ```
 
-The KM plots for the top interaction is stored as a named list in the `$km_plot_list` facet of `results`. View the KM plots for "KMT2D*Monocytes" interaction:
+The KM plots for the top interactions are stored in a named list in the `$km_plot_list` facet of `results`. View the KM plots for "KMT2D*Monocytes" interaction:
 ```R
 plot(results$km_plot_list[['KMT2D*Monocytes']])
 ```
