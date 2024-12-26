@@ -60,8 +60,10 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 
 
 ####
-# Apply PACIFIC to the data using the defined features (using the default settings):
+# Apply PACIFIC to the data using the defined features (using default settings):
 ####
+
+set.seed(1) # for reproducibility of this demo
 
 results <- PACIFIC(data = data,
                    baseline = baseline,
@@ -72,21 +74,21 @@ results <- PACIFIC(data = data,
 
 # ----------------------------------------------------
 # PACIFIC step 1:
-# preprocessing ... 0.07376504 secs 
-# iteration 1/10 : No feature selected by Elastic net. 0.3001399 secs 
-# iteration 2/10 : 16 features selected by Elastic net. 0.298044 secs 
-# iteration 3/10 : 2 features selected by Elastic net. 0.276397 secs 
-# iteration 4/10 : 14 features selected by Elastic net. 0.2564099 secs 
-# iteration 5/10 : 12 features selected by Elastic net. 0.2716498 secs 
-# iteration 6/10 : 13 features selected by Elastic net. 0.2608631 secs 
-# iteration 7/10 : 14 features selected by Elastic net. 0.2672498 secs 
-# iteration 8/10 : 24 features selected by Elastic net. 0.3149059 secs 
-# iteration 9/10 : 21 features selected by Elastic net. 0.2895541 secs 
-# iteration 10/10 : 16 features selected by Elastic net. 0.291364 secs 
-# elapsed time: 2.92115 secs 
+# preprocessing ... 0.06038189 secs 
+# iteration 1/10 : 11 features selected by Elastic net. 0.227638 secs 
+# iteration 2/10 : 8 features selected by Elastic net. 0.2311988 secs 
+# iteration 3/10 : 1 features selected by Elastic net. 0.2655289 secs 
+# iteration 4/10 : 10 features selected by Elastic net. 0.2355261 secs 
+# iteration 5/10 : 13 features selected by Elastic net. 0.2278142 secs 
+# iteration 6/10 : 16 features selected by Elastic net. 0.2753899 secs 
+# iteration 7/10 : 14 features selected by Elastic net. 0.2690251 secs 
+# iteration 8/10 : 13 features selected by Elastic net. 0.231288 secs 
+# iteration 9/10 : 4 features selected by Elastic net. 0.2364419 secs 
+# iteration 10/10 : 12 features selected by Elastic net. 0.2437558 secs 
+# elapsed time: 2.506445 secs 
 # ----------------------------------------------------
 # PACIFIC step 2:
-# elapsed time: 0.519068 secs 
+# elapsed time: 0.4059999 secs  
 ```
 
 The returned `results` is saved in ".RDS" format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
@@ -94,25 +96,21 @@ The returned `results` is saved in ".RDS" format in `output_dir`. View the top i
 results$top_interactions
 
 #                 intr feat1_level                   feat2_level EN_score       intr_P
-#1:    KMT2D*Monocytes     mutated            higher_than_median       90 0.0004387153
+#1:    KMT2D*Monocytes     mutated            higher_than_median      100 0.0004387153
 #2: CDKN2A*T_cells_CD8     mutated lower_than_or_equal_to_median       80 0.0659434636
-#3:     TP53*Monocytes     mutated lower_than_or_equal_to_median       70 0.0103065474
-#4:   TP53*T_cells_CD8     mutated            higher_than_median       60 0.1290463476
+#3:     TP53*Monocytes     mutated lower_than_or_equal_to_median       60 0.0103065474
 #      intr_P_C1   intr_P_C2   intr_P_C3   feat1_P    feat2_P intr_logHR
 #1: 0.0002226526 0.001773958 0.001535063 0.3606967 0.07902884  0.8232534
 #2: 0.1744545811 0.096514456 0.295044751 0.2137792 0.36907611  0.4981860
 #3: 0.0337056835 0.047693554 0.121954591 0.1398141 0.07902884 -0.3784980
-#4: 0.3301653630 0.166982093 0.538540291 0.1398141 0.36907611 -0.2237408
 #   intr_logHR_lower95 intr_logHR_upper95 feat1_logHR feat1_logHR_lower95
 #1:         0.40706933         1.23943739   0.1575879          -0.1754631
 #2:        -0.00184557         0.99821767   0.2442130          -0.1311699
 #3:        -0.67170399        -0.08529202  -0.2483703          -0.5713498
-#4:        -0.51528819         0.06780659  -0.2483703          -0.5713498
 #   feat1_logHR_upper95 feat2_logHR feat2_logHR_lower95 feat2_logHR_upper95
 #1:          0.49063898   0.2555551         -0.03018218          0.54129234
 #2:          0.61959601   0.1291237         -0.15292406          0.41117153
 #3:          0.07460914  -0.2555551         -0.54129234          0.03018218
-#4:          0.07460914  -0.1291237         -0.41117153          0.15292406
 ```
 
 The KM plots for the top interaction is stored as a named list in the `$km_plot_list` facet of `results`. View the KM plots for "KMT2D*Monocytes" interaction:
