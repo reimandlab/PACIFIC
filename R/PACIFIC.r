@@ -123,7 +123,7 @@ PACIFIC <- function(data,
     data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
     colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
     colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
-    km_list <- plot_km(data_vars, features)
+    km_plot_list <- plot_km(data_vars, features)
     # -------------------------------------------------------------------------------------------
     rownames(features) <- NULL
     
@@ -158,7 +158,7 @@ PACIFIC <- function(data,
     colnames(features)[colnames(features) == 'Effect_size_upper.95_of_second_variable'] <- 'feat2_logHR_upper95'
     
     # -------------------------------------------------------------------------------------------
-    results <- list(top_interactions=features, km_list=km_list)
+    results <- list(top_interactions=features, km_plot_list=km_list)
     
     invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
     saveRDS(results, paste0(output_dir, '/results.rds'))
