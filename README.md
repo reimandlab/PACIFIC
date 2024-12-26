@@ -124,10 +124,12 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 <img src="inst/extdata/KMs_KMT2D_Monocytes.jpg" width="100%">
 
 ### Notes
-- We recommend highlighting only those interactions for which all four ANOVA tests are significant after FDR correction (e.g. FDR < 0.05). The P-values of these 4 ANOVA tests are as follows:
-   - a
-   - b
-   - c
+- We recommend highlighting only the interactions for which all of the following ANOVA tests (from the `results` table) are significant after FDR correction (e.g., FDR < 0.05):
+   - `intr_P`: interaction VS baseline
+   - `intr_P_C1`: interaction VS baseline + feat1
+   - `intr_P_C2`: interaction VS baseline + feat2
+   - `intr_P_C3`: interaction VS baseline + feat1 + feat2
+
 *In the above example, only the first interaction passes this criterion.*
 - Usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
 - C
