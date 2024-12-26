@@ -6,7 +6,7 @@
 \usage{
 PACIFIC(
   data,
-  baseline = c("age", "sex", "stage"),
+  baseline = NA,
   feat1,
   feat2,
   discretization_method = "median",

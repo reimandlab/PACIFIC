@@ -100,6 +100,8 @@ PACIFIC <- function(data,
                   output_dir = output_dir, 
                   verbose = verbose)
     # -------------------------------------------------------------------------------------------
+    S.TM <- Sys.time()
+    if(verbose){ cat('----------------------------------------------------\nPACIFIC step 2:\n'); flush.console() }
     features <- PACIFIC_step2(step1_output_dir = output_dir, 
                               anova_baseline = baseline, 
                               EN_cutoff = EN_cutoff)
@@ -161,6 +163,7 @@ PACIFIC <- function(data,
     invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
     saveRDS(results, paste0(output_dir, '/results.rds'))
     
+    if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
     return(results)
 }    
     
@@ -200,7 +203,7 @@ PACIFIC_step1 <- function(data,
 
     S.TM <- Sys.time()
     
-    if(verbose){ cat('----------------------------------------------------\ncall PACIFIC_step1:\n'); flush.console() }
+    if(verbose){ cat('----------------------------------------------------\nPACIFIC step 1:\n'); flush.console() }
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -504,7 +507,8 @@ PACIFIC_step1 <- function(data,
         return(selected_variables)
     })
 
-    if(verbose){ cat(paste0('save the results in: ', normalizePath(output_dir),'\n')); flush.console() }
+    # if(verbose){ cat(paste0('save the results in: ', normalizePath(output_dir),'\n')); flush.console() }
+    
     # >>> save the results in the output_dir
     # check if this is not overwriting an existing file, if so, wait 1 sec and check again...
     while(TRUE){
