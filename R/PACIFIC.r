@@ -158,7 +158,7 @@ PACIFIC <- function(data,
     colnames(features)[colnames(features) == 'Effect_size_upper.95_of_second_variable'] <- 'feat2_logHR_upper95'
     
     # -------------------------------------------------------------------------------------------
-    results <- list(top_interactions=features, km_plot_list=km_list)
+    results <- list(top_interactions=features, km_plot_list=km_plot_list)
     
     invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
     saveRDS(results, paste0(output_dir, '/results.rds'))
