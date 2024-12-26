@@ -19,8 +19,8 @@ library(PACIFIC)
 # Run an example using the dataset included in the PACIFIC package. 
 ####
 
-fname_example_dataset <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
-data <- readRDS(fname_example_dataset)
+fname_data <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
+data <- readRDS(fname_data)
 
 ####
 # Define the baseline and the two sets of features.
@@ -28,8 +28,10 @@ data <- readRDS(fname_example_dataset)
 
 baseline <- c("age", "sex", "stage")
 feat1 <- c("TP53", "KMT2D", "CDKN2A", "KRAS")
-feat2 <- c("B_cells_memory", "Plasma_cells", "Macrophages_M1", "Macrophages_M2", 
-           "Monocytes", "NK_cells_activated", "T_cells_CD8","T_cells_regulatory_Tregs")
+feat2 <- c("B_cells_memory", "Plasma_cells", 
+           "Macrophages_M1", "Macrophages_M2", 
+           "Monocytes", "NK_cells_activated", 
+           "T_cells_CD8","T_cells_regulatory_Tregs")
 
 ####
 # View a few rows of the data with the selected columns:
