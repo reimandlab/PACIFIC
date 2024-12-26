@@ -124,12 +124,11 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 <img src="inst/extdata/KMs_KMT2D_Monocytes.jpg" width="100%">
 
 ### Notes
-- We recommend highlighting only the interactions for which all of the following ANOVA tests (from the `results` table) are significant after FDR correction (e.g., FDR < 0.05):
+- We recommend highlighting only the interactions for which all of the following ANOVA tests are significant after FDR correction (available in the `results` table):
    - `intr_P`: interaction VS baseline
    - `intr_P_C1`: interaction VS baseline + feat1
    - `intr_P_C2`: interaction VS baseline + feat2
    - `intr_P_C3`: interaction VS baseline + feat1 + feat2
-
-*In the above example, only the first interaction passes this criterion.*
+- By default, each feature in feat1 and feat2 is treated according the following instructions:
+   - If it is categorical, it must be factor with two levels. In this case, the first and second levels are considered as 0 and 1, respectively. In other words, only the second level can contribute to any potential interaction.
 - Usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
-- C
