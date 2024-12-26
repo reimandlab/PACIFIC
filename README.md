@@ -88,8 +88,7 @@ results <- PACIFIC(data = data,
 # elapsed time: 0.519068 secs 
 ```
 
-The returned `results` is saved as in ".RDS" format in `output_dir`. 
-View the top interactions (frequently selected in the iterations) with the `$top_interactions` facet.
+The returned `results` is saved in ".RDS" format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
 ```R
 results$top_interactions
 
@@ -114,6 +113,12 @@ results$top_interactions
 #3:          0.07460914  -0.2555551         -0.54129234          0.03018218
 #4:          0.07460914  -0.1291237         -0.41117153          0.15292406
 ```
+
+The KM plots for the top interaction is stored as a named list in the `$km_plot_list` facet of `results`. View the KM plots for "KMT2D*Monocytes" interaction:
+```R
+plot(results$km_plot_list[['KMT2D*Monocytes']])
+```
+<img src="inst/extdata/KM_KMT2D_Monocytes.jpg" width="100%">
 
 * **Step 1:** The function `PACIFIC_step1()` runs the iterative procedure (subsampling, preprocessing, regularization) for a number of iterations (`num_iterations`) and stores the results in the output directory (`output_dir`). The user can independently repeat calling this function with the same input arguments (but with arbitrary `num_iterations`) to reach a desired **total** number of iterations. For instance, instead of running the function once with `num_iterations = 1000`, you can run it with `num_iterations = 10` for 100 times to accumulate 1000 iterations. This facilitates parallelizing the iterations, e.g. by submitting jobs to an HPC cluster. At any time, you can call `current_total_iters()` and specify the output directory to see the total number of iterations currently accumulated there. Note that usually more than 1000 iterations is needed for stable results (depending on the complexity of the input data).
 
