@@ -60,7 +60,7 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 
 
 ####
-# Apply PACIFIC to the data using the defined features (using default settings):
+# Apply PACIFIC to the data with the defined features (using default settings):
 ####
 
 set.seed(1) # for reproducibility of this demo
