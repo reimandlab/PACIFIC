@@ -5,5 +5,6 @@ Version: 1.0.0
 Imports:
     glmnet,
     survival
+    ggplot2
 Encoding: UTF-8
 RoxygenNote: 7.2.3
