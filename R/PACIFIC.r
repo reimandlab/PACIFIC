@@ -1,4 +1,4 @@
-#' Run PACIFIC feature selection pipeline
+#' Run step 1 of PACIFIC for survival outcomes
 #' 
 #' @param data data.frame. The table of input data with samples in rows and features in columns. 
 #' @param baseline character vector. The baseline clinical features as columns of "data". Default: c("age", "sex", "stage", "grade"). Put NA for empty set.
@@ -13,18 +13,18 @@
 #' @param verbose character. Whether to print progress messages. Default: FALSE
 #' 
 #' @export
-PACIFIC <- function(data, 
-                    baseline = NA,
-                    feat1, 
-                    feat2, 
-                    discretization_method = "median", 
-                    sparsity_threshold = "5_percent", 
-                    univariate_p_cutoff = 0.1, 
-                    subsampling_ratio = 0.8, 
-                    num_iterations = 10, 
-                    EN_cutoff = 50,
-                    output_dir, 
-                    verbose = TRUE){
+PACIFIC_survival_step1 <- function(data, 
+                                   baseline = NA,
+                                   feat1, 
+                                   feat2, 
+                                   discretization_method = "median", 
+                                   sparsity_threshold = "5_percent", 
+                                   univariate_p_cutoff = 0.1, 
+                                   subsampling_ratio = 0.8, 
+                                   num_iterations = 10, 
+                                   EN_cutoff = 50,
+                                   output_dir, 
+                                   verbose = TRUE){
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
@@ -89,11 +89,21 @@ PACIFIC <- function(data,
                   num_iterations = num_iterations, 
                   output_dir = output_dir, 
                   verbose = verbose)
-    # -------------------------------------------------------------------------------------------
+}
+
+
+#' Run step 2 of PACIFIC for survival outcomes
+#' 
+#' @export
+PACIFIC_survival_step2 <- function(step1_output_dir, 
+                                   EN_cutoff = 50,
+                                   anova_baseline = NA, 
+                                   verbose = FALSE){
+    
     S.TM <- Sys.time()
     if(verbose){ cat('----------------------------------------------------\nPACIFIC step 2:\n'); flush.console() }
-    features <- PACIFIC_step2(step1_output_dir = output_dir, 
-                              anova_baseline = baseline, 
+    features <- PACIFIC_step2(step1_output_dir = step1_output_dir, 
+                              anova_baseline = anova_baseline, 
                               EN_cutoff = EN_cutoff)
     # -------------------------------------------------------------------------------------------
     features <- features[grepl('\\*', features$id),]
@@ -110,7 +120,7 @@ PACIFIC <- function(data,
         return(NULL)
     }
     # -------------------------------------------------------------------------------------------
-    data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
+    data_vars <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))$data_vars
     colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
     colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
     km_plot_list <- sapply(unique(features$id), get_km_plot, features=features, data_vars=data_vars, simplify = FALSE, USE.NAMES = TRUE)
@@ -150,13 +160,14 @@ PACIFIC <- function(data,
     # -------------------------------------------------------------------------------------------
     results <- list(top_interactions=features, km_plot_list=km_plot_list)
     
-    invisible(file.remove(list.files(output_dir, pattern = '^step1-', full.names = T)))
-    saveRDS(results, paste0(output_dir, '/results.rds'))
+    saveRDS(results, paste0(step1_output_dir, '/results.rds'))
     
     F.TM <- Sys.time()
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
     return(results)
-}    
+}
+    
+    
     
 
 # data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
