@@ -60,7 +60,9 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #5:        0.036007745  0.17967422              0.040558222
 ```
 
-PACIFIC pipeline runs in two steps. The step 1 runs the elastic net iterations, and step 2 aggregates the resutls of all iterations, identifies the frequently selected interactions, and calculates the ANOVA p-values.
+PACIFIC pipeline runs in two steps:
+- Step 1: To tun the iterative procedure. This step can be repeated independently to accumulate the desired number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See "[Scalability](#scalability)" for additional notes.
+- Step 2: To aggregate the resutls of all iterations accumulated in the output directory. At this step, the candidate interactions (those selected in ≥50% of iterations) are identified, and their ANOVA p-values are calculated. The 50% cutoff can be adjusted by the user.
 
 ```R
 ####
@@ -137,3 +139,7 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
    - If it is categorical, it must be `factor` with two levels. In this case, the second level is considered as the "active" state. In other words, only the second level may contribute to any potential interaction.
    - If it is continuous (`numeric`), it is converted into high or low levels (within each iteration of feature selection) based on `> median` or `<= median`, respectively. In this case, both high and low levels may contribute to any potential interaction.
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
+
+## Scalability
+Here is how.
+
