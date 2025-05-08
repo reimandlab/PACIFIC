@@ -92,9 +92,6 @@ results <- PACIFIC_survival_step1(data = data,
 # iteration 9/10 : 4 features selected by Elastic net. 0.2364419 secs 
 # iteration 10/10 : 12 features selected by Elastic net. 0.2437558 secs 
 # elapsed time: 2.506445 secs 
-# ----------------------------------------------------
-# PACIFIC step 2:
-# elapsed time: 0.4059999 secs  
 ```
 
 The returned `results` is saved in ".RDS" format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
