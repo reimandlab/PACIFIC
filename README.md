@@ -77,7 +77,6 @@ PACIFIC_survival_step1(data = data,
                        feat2 = feat2,
                        num_iterations = 10,
                        output_dir = 'out')
-
 # ----------------------------------------------------
 # PACIFIC step 1:
 # preprocessing ... 0.06038189 secs 
@@ -91,7 +90,13 @@ PACIFIC_survival_step1(data = data,
 # iteration 8/10 : 13 features selected by Elastic net. 0.231288 secs 
 # iteration 9/10 : 4 features selected by Elastic net. 0.2364419 secs 
 # iteration 10/10 : 12 features selected by Elastic net. 0.2437558 secs 
-# elapsed time: 2.506445 secs 
+# elapsed time: 2.506445 secs
+
+results <- PACIFIC_survival_step2(step1_output_dir = 'out',
+                                  anova_baseline = baseline)
+# ----------------------------------------------------
+# PACIFIC step 2:
+# elapsed time: 0.601191 secs 
 ```
 
 The returned `results` is saved in ".RDS" format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
