@@ -1,13 +1,3 @@
-# Get the total number of iterations currently stored in a directory
-# dir WIP
-current_total_iters <- function(dir){
-    r <- list.files(dir, pattern = 'step1-results')
-    r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
-    N <- sum(as.numeric(sapply(r, '[[', 2)))
-    return(N)
-}
-
-
 #' Run PACIFIC feature selection pipeline
 #' 
 #' @param data data.frame. The table of input data with samples in rows and features in columns. 
@@ -626,4 +616,13 @@ PACIFIC_step2 <- function(step1_output_dir,
     })))
     
     return(features)
+}
+
+# Get the total number of iterations currently stored in a directory
+# dir WIP
+current_total_iters <- function(dir){
+    r <- list.files(dir, pattern = 'step1-results')
+    r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
+    N <- sum(as.numeric(sapply(r, '[[', 2)))
+    return(N)
 }
