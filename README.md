@@ -71,12 +71,12 @@ PACIFIC pipeline runs in two steps:
 
 set.seed(1) # for reproducibility of this demo
 
-results <- PACIFIC_survival_step1(data = data,
-                                  baseline = baseline,
-                                  feat1 = feat1,
-                                  feat2 = feat2,
-                                  num_iterations = 10,
-                                  output_dir = 'out')
+PACIFIC_survival_step1(data = data,
+                       baseline = baseline,
+                       feat1 = feat1,
+                       feat2 = feat2,
+                       num_iterations = 10,
+                       output_dir = 'out')
 
 # ----------------------------------------------------
 # PACIFIC step 1:
