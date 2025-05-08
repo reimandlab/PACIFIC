@@ -61,7 +61,7 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 ```
 
 PACIFIC pipeline runs in two steps:
-- **Step 1**: To tun the iterative procedure. This step can be repeated through independent calls to accumulate the desired total number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See the **'Scalability'** section for additional notes.
+- **Step 1**: To tun the iterative procedure. This step can be repeated through independent calls to accumulate the desired **total** number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See the **'Scalability'** section for additional notes.
 - **Step 2**: To aggregate the resutls of all iterations accumulated in the output directory. At this step, the candidate interactions (those selected in ≥50% of iterations) are identified, and their ANOVA p-values are calculated. The 50% cutoff can be adjusted by the user.
 
 ```R
@@ -143,5 +143,8 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
 
 ## Scalability
-You can repeat the "step 1" of PACIFIC through independent call of the function to accumulate the desired total number of iterations. To do so, please note the following:
-
+You can repeat the "Step 1" of PACIFIC through independent calls of the function to accumulate the desired total number of iterations. To do so, please note the following:
+- Each call _must_ use a _unique_ `job_index`. The pipeline tracks job indices already used for the specified _output directory_. Any call that reuses a previously used job index is explicitly prevented with an error message.
+- All calls _must_ use exactly the same arguments, except for `job_index`, which _must_ differ, and `num_iterations`, which _may_ vary across the calls. Any inconsistent call is explicitly prevented with an error message.
+- Once the desired total number of iterations has been reached, the "Step 2" function should be called with the same _output directory_ to aggregate the iterations and produce the final results.
+ 
