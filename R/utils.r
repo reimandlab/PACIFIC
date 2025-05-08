@@ -311,16 +311,17 @@ get_km_plot <- function(this_id, features, data_vars){
     
     km_df$title <- factor(km_df$title, levels = unique(km_df$title))
     ggplot2::ggplot()+ggplot2::theme_bw()+
-        ggplot2::geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
+        ggplot2::geom_segment(data = km_df, ggplot2::aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
         ggplot2::scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
         ggplot2::scale_y_continuous(limits = c(0, 1))+
         ggplot2::scale_x_continuous(limits = c(0, max_time))+
         ggplot2::facet_wrap(~title, nrow = NR)+
         ggplot2::scale_color_manual(values = colors, name=NULL)+
-        ggplot2::ylab('Survival P')+xlab('Time')+
-        ggplot2::theme(panel.grid = element_blank(),
-                       strip.text.x = element_text(hjust=0),
-                       strip.background.x = element_blank())
+        ggplot2::ylab('Survival P')+
+        ggplot2::xlab('Time')+
+        ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                       strip.text.x = ggplot2::element_text(hjust=0),
+                       strip.background.x = ggplot2::element_blank())
 }
 
 
