@@ -1,6 +1,6 @@
 # PACIFIC - Predict and Analyze Combinations of Interacting Features In Cancer
 
-This pipeline enables exploring the interactions between two types of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected interactions across the iterations. These candidate interactions are a minimal subset of input interactions with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further highlighting the interactions whose explanatory information is complementary their individual components as well as the baseline variables.
+This pipeline enables exploring the interactions between two types of multi-omic features in relation to cancer patient outcomes. The pipeline runs an iterative procedure consisting of subsampling, feature preprocessing and elastic net regularization of the multivariate models to identify the most frequently selected interactions across the iterations. These candidate interactions are a minimal subset of input interactions with robust explanatory information. The pipeline also provides a series of ANOVA P values which can be used for further highlighting the interactions whose explanatory information is complementary to their individual components as well as the baseline variables.
 
 ## Installation
 Dependencies: 
@@ -11,13 +11,13 @@ Dependencies:
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
 ## Usage
-In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with overall survival outcomes, clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the first feature set (`feat1`) as the mutational status of driver genes, the second feature set (`feat2`) as the immune cell levels, and the `baseline` variables as patient age, sex, and tumor stage. For simplicity, we use a **subset** of available features for the two feature sets in this example.
+In this example, PACIFIC is applied to a dataset of 463 TCGA-LUSC primary tumors annotated with clinical variables, mutational status of cancer driver genes, and relative abundance of immune cell types in tumors (see IGX paper for data collection details). Here, we define the patient outcome of interest as overall survival, the first feature set (`feat1`) as the mutational status of driver genes, the second feature set (`feat2`) as the immune cell levels, and the `baseline` variables as patient age, sex, and tumor stage. For simplicity, we use a small portion of the available feature sets in this example.
 
 ```R
 library(PACIFIC)
 
 ####
-# Run an example using the dataset included in the PACIFIC package. 
+# Using the dataset included in the PACIFIC package. 
 ####
 
 fname_data <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
@@ -60,6 +60,7 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #5:        0.036007745  0.17967422              0.040558222
 ```
 
+PACIFIC pipeline runs in two steps. The step 1 runs the elastic net iterations, and step 2 aggregates the resutls of all iterations, identifies the frequently selected interactions, and calculates the ANOVA p-values.
 
 ```R
 ####
