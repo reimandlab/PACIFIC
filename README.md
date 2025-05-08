@@ -61,8 +61,8 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 ```
 
 PACIFIC pipeline runs in two steps:
-- Step 1: To tun the iterative procedure. This step can be repeated through independent calls to accumulate the desired total number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See "[Scalability](#scalability)" for additional notes.
-- Step 2: To aggregate the resutls of all iterations accumulated in the output directory. At this step, the candidate interactions (those selected in ≥50% of iterations) are identified, and their ANOVA p-values are calculated. The 50% cutoff can be adjusted by the user.
+- **Step 1**: To tun the iterative procedure. This step can be repeated through independent calls to accumulate the desired total number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See the "Scalability" section for additional notes.
+- **Step 2**: To aggregate the resutls of all iterations accumulated in the output directory. At this step, the candidate interactions (those selected in ≥50% of iterations) are identified, and their ANOVA p-values are calculated. The 50% cutoff can be adjusted by the user.
 
 ```R
 ####
