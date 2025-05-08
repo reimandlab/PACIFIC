@@ -99,7 +99,7 @@ PACIFIC_survival_step1 <- function(data,
 PACIFIC_survival_step2 <- function(step1_output_dir, 
                                    EN_cutoff = 50,
                                    anova_baseline = NA, 
-                                   verbose = FALSE){
+                                   verbose = TRUE){
     
     S.TM <- Sys.time()
     if(verbose){ cat('----------------------------------------------------\nPACIFIC step 2:\n'); flush.console() }

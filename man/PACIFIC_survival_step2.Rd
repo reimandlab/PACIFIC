@@ -8,7 +8,7 @@ PACIFIC_survival_step2(
   step1_output_dir,
   EN_cutoff = 50,
   anova_baseline = NA,
-  verbose = FALSE
+  verbose = TRUE
 )
 }
 \description{

@@ -4,7 +4,7 @@ Title: PACIFIC - Predict and Analyze Combinations of Interacting Features In Can
 Version: 1.0.0
 Imports:
     glmnet,
-    survival
+    survival,
     ggplot2
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
