@@ -143,5 +143,5 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
 
 ## Scalability
-Here is how.
+You can repeat the "step 1" of PACIFIC through independent call of the function to accumulate the desired total number of iterations. To do so, please note the following:
 
