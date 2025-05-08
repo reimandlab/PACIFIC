@@ -6,6 +6,7 @@ This pipeline enables exploring the interactions between two types of multi-omic
 Dependencies: 
 - `glmnet`
 - `survival`
+- `ggplot2`
 
 Clone the repository (`git clone https://github.com/reimandlab/PACIFIC.git`), then run the following command in R: `install.packages("path/to/PACIFIC", repos = NULL, type = "source")`.
 
