@@ -17,9 +17,8 @@ p_univariate <- function(family, data, X){
     n <- grep('Pr\\(', colnames(coefs))
     if(1 != length(n)) stop('fit coefficients are not as expected!')
     return(coefs[X, n])
-    # this is Wald test for coxPH and logistic regression
+    # Wald test is calculated for coxPH and logistic regression, whereas t-test is calculated for linear regression
     # https://stats.stackexchange.com/questions/59879/logistic-regression-anova-chi-square-test-vs-significance-of-coefficients-ano
-    # but it is t-test for linear regression
 }
 
 p_anova <- function(family, data, cntrl, X){
@@ -53,31 +52,36 @@ discretize <- function(data, features, discretization_function){
     return(data)
 }
 
+
+# get the levels of the given feature in data
+get_levels <- function(f, data){
+    # NA level for NA feature
+    if(is.na(f)) return(NA)
+    v <- data[[f]]
+    # sanity check: v must be either numeric or factor with at least two levels
+    stopifnot(is.numeric(v) | (is.factor(v) & length(levels(v)) >=2))
+    # NA level for numeric feature
+    if(is.numeric(v)) return(NA)
+    # otherwise, input feature is factor, return levels
+    return(levels(v))
+}
+
+# get the base level(s) of the given feature in data
+get_bases <- function(f, data, flexible_features){
+    # get levels of this feature
+    L <- get_levels(f, data)
+    # if levels=NA, return NA (meaning that this feature is NA or numeric)
+    if(identical(NA, L)) return(NA)
+    # otherwise, input feature is factor, return bases based on flexibility
+    # if flexible, all levels can be potential bases
+    if(f %in% flexible_features) return(L)
+    # otherwise, the first level is the only base
+    return(L[1])
+}
+
+# Make a container table to hold information of features, including IDs, types, levels of elements, base groups, variables.
 make_table_of_features <- function(data, features_vector, single_features, flexible_features){
-    # this table contains information of feature-IDs: types, levels of elements, base groups, variables.
     features <- do.call(rbind, lapply(features_vector, function(id){
-        get_levels <- function(f){
-            # NA level for NA feature
-            if(is.na(f)) return(NA)
-            v <- data[[f]]
-            # sanity check: v must be either numeric or factor with at least two levels
-            stopifnot(is.numeric(v) | (is.factor(v) & length(levels(v)) >=2))
-            # NA level for numeric feature
-            if(is.numeric(v)) return(NA)
-            # otherwise, input feature is factor, return levels
-            return(levels(v))
-        }
-        get_bases <- function(f){
-            # get levels of this feature
-            L <- get_levels(f)
-            # if levels=NA, return NA (meaning that this feature is NA or numeric)
-            if(identical(NA, L)) return(NA)
-            # otherwise, input feature is factor, return bases based on flexibility
-            # if flexible, all levels can be potential bases
-            if(f %in% flexible_features) return(L)
-            # otherwise, the first level is the only base
-            return(L[1])
-        }
         sp <- unlist(strsplit(id, '\\*'))
         df <- expand.grid(id=id,
                           type = ifelse(2==length(sp), 
@@ -85,11 +89,11 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
                                         ifelse(id %in% single_features, 
                                                'single_feature', 
                                                'interaction_element')), 
-                          feature1 = sp[1], feature1_level = get_levels(sp[1]),
-                          feature2 = sp[2], feature2_level = get_levels(sp[2]),
+                          feature1 = sp[1], feature1_level = get_levels(sp[1], data),
+                          feature2 = sp[2], feature2_level = get_levels(sp[2], data),
                           stringsAsFactors = F)
         if(length(sp) == 1) sp <- c(sp, NA)
-        ex <- expand.grid(lapply(sp, get_bases))
+        ex <- expand.grid(lapply(sp, get_bases, data=data, flexible_features=flexible_features))
         do.call(rbind, lapply(1:nrow(ex), function(i){
             L1 <- ex[i,1]; if(!is.na(L1)) df <- subset(df, feature1_level != L1)
             L2 <- ex[i,2]; if(!is.na(L2)) df <- subset(df, feature2_level != L2)
@@ -103,6 +107,16 @@ make_table_of_features <- function(data, features_vector, single_features, flexi
     return(features)
 }
 
+# Get numeric value of the given feature with the given level (if applicable) in data
+get_v <- function(name, level, data){
+    if(is.na(name)) return(1)
+    v <- data[[name]]
+    if(!is.na(level)) v <- as.numeric(v == level)
+    return(v)
+}
+
+# Make a data frame which holds varaible values across samples. It is practically the same as the 
+# original data but with columns named by variables corresponding to each feature.
 make_data_for_variables <- function(data, features){
     # make a new data table with the same {response, event} columns
     new_data <- data[, intersect(colnames(data), c('response','event')), drop=F]
@@ -112,14 +126,8 @@ make_data_for_variables <- function(data, features){
     # continuous when the feature contains at least one numeric element {num, num*num, num*fac, fac*num}
     for(i in 1:nrow(features)){
         r <- features[i,]
-        get_v <- function(name, level){
-            if(is.na(name)) return(1)
-            v <- data[[name]]
-            if(!is.na(level)) v <- as.numeric(v == level)
-            return(v)
-        }
-        v1 <- get_v(r$feature1, r$feature1_level)
-        v2 <- get_v(r$feature2, r$feature2_level)
+        v1 <- get_v(r$feature1, r$feature1_level, data)
+        v2 <- get_v(r$feature2, r$feature2_level, data)
         new_data[[r$variable]] <- v1 * v2
     }
     return(new_data)
@@ -226,94 +234,101 @@ wait_for_file_to_stabilize <- function(p){
     } 
 }
 
-plot_km <- function(data_vars, features){
+
+# Get data.frame of Kaplan–Meier estimator
+get_km_df <- function(fit, custom_levels, max_time){
+    stopifnot(length(fit$strata) == length(custom_levels))
+    df <- rbind(
+        do.call(rbind, lapply(names(fit$strata), function(lv){
+            strata <- summary(fit)$strata
+            time <- summary(fit)$time[strata == lv]
+            surv <- summary(fit)$surv[strata == lv]
+            n <- sum(strata == lv)
+            data.frame(x = c(0, time, time),
+                       xend = c(time, max_time, time),
+                       y = c(1, surv, 1, surv[-n]),
+                       yend = c(1, surv, surv),
+                       strata = lv,
+                       linewidth = 2)
+        })),
+        subset(data.frame(x = fit$time,
+                          xend = fit$time,
+                          y = pmax(0, fit$surv - 0.01),
+                          yend = pmin(1, fit$surv + 0.01),
+                          strata = rep(names(fit$strata), fit$strata),
+                          linewidth = 1,
+                          n.censor = fit$n.censor), n.censor > 0, select=-n.censor))
+    df$strata <- factor(custom_levels[match(df$strata, names(fit$strata))], levels = rev(custom_levels))
+    return(df)
+}
+
+# Make Kaplan–Meier plots for the given <id> in the features table based on the input data_vars
+get_km_plot <- function(this_id, features, data_vars){
     
     max_time <- max(data_vars$time)
     
-    get_km_df <- function(fit, custom_levels){
-        stopifnot(length(fit$strata) == length(custom_levels))
-        df <- rbind(
-            do.call(rbind, lapply(names(fit$strata), function(lv){
-                strata <- summary(fit)$strata
-                time <- summary(fit)$time[strata == lv]
-                surv <- summary(fit)$surv[strata == lv]
-                n <- sum(strata == lv)
-                data.frame(x = c(0, time, time),
-                           xend = c(time, max_time, time),
-                           y = c(1, surv, 1, surv[-n]),
-                           yend = c(1, surv, surv),
-                           strata = lv,
-                           linewidth = 2)
-            })),
-            subset(data.frame(x = fit$time,
-                              xend = fit$time,
-                              y = pmax(0, fit$surv - 0.01),
-                              yend = pmin(1, fit$surv + 0.01),
-                              strata = rep(names(fit$strata), fit$strata),
-                              linewidth = 1,
-                              n.censor = fit$n.censor), n.censor > 0, select=-n.censor))
-        df$strata <- factor(custom_levels[match(df$strata, names(fit$strata))], levels = rev(custom_levels))
-        return(df)
-    }
+    df <- subset(features, id == this_id)
+    stopifnot(nrow(df) > 0)
+    NR <- nrow(df)
     
-    get_km_plot <- function(this_id){
-        df <- subset(features, id == this_id)
-        stopifnot(nrow(df) > 0)
-        NR <- nrow(df)
-        
-        if(grepl('\\*', this_id) & any(is.na(df))) return(NULL)
-        if(any(is.na(df$feature1_level))) return(NULL)
-        
-        
-        custom_levels <- paste0('Feature ', c('absent', 'present'))
-        colors <- c('black', 'red')
-        names(colors) <- custom_levels
-        
-        km_df <- do.call(rbind, lapply(df$variable, function(v){
-            df <- subset(features, variable == v)
-            stopifnot(1 == nrow(df))
-            
-            isIntr <- grepl('\\*', df$id)
-            fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
-            km_df <- cbind(get_km_df(fit, custom_levels),
-                           title = paste0('Feature: ', gsub('\\*', ' * ', df$id),
-                                          '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&',
-                                                                            df$feature2_level),
-                                                              df$feature1_level),
-                                          '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
-                                          '\nlogHR: ', signif(df$Effect_size_of_feature, 2),
-                                          '\nP: ', signif(df$P_ANOVA_of_feature, 2)))
-            if(isIntr){
-                km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
-                    v <- df[[paste0('feature',i,'_variable')]]
-                    n <- ifelse(i == 1, 'first', 'second')
-                    fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
-                    cbind(get_km_df(fit, custom_levels),
-                          title = paste0('Feature: ', df[[paste0('feature',i)]],
-                                         '\nLevel: ', df[[paste0('feature',i,'_level')]],
-                                         '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
-                                         '\nlogHR: ', signif(df[[paste0('Effect_size_of_',n,'_variable')]], 2),
-                                         '\nP: ', signif(df[[paste0('P_ANOVA_of_',n,'_variable')]], 2)))
-                })))
-            }
-            return(km_df)
-        }))
-        
-        km_df$title <- factor(km_df$title, levels = unique(km_df$title))
-        ggplot()+theme_bw()+
-            geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
-            scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
-            scale_y_continuous(limits = c(0, 1))+
-            scale_x_continuous(limits = c(0, max_time))+
-            facet_wrap(~title, nrow = NR)+
-            scale_color_manual(values = colors, name=NULL)+
-            ylab('Survival P')+xlab('Time')+
-            theme(panel.grid = element_blank(),
-                  strip.text.x = element_text(hjust=0),
-                  strip.background.x = element_blank())
-    }
+    if(grepl('\\*', this_id) & any(is.na(df))) return(NULL)
+    if(any(is.na(df$feature1_level))) return(NULL)
     
-    km_list <- sapply(unique(features$id), get_km_plot, simplify = FALSE, USE.NAMES = TRUE)
     
-    return(km_list)
+    custom_levels <- paste0('Feature ', c('absent', 'present'))
+    colors <- c('black', 'red')
+    names(colors) <- custom_levels
+    
+    km_df <- do.call(rbind, lapply(df$variable, function(v){
+        df <- subset(features, variable == v)
+        stopifnot(1 == nrow(df))
+        
+        isIntr <- grepl('\\*', df$id)
+        fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+        km_df <- cbind(get_km_df(fit, custom_levels, max_time),
+                       title = paste0('Feature: ', gsub('\\*', ' * ', df$id),
+                                      '\nLevel: ', ifelse(isIntr, paste(df$feature1_level, '&',
+                                                                        df$feature2_level),
+                                                          df$feature1_level),
+                                      '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+                                      '\nlogHR: ', signif(df$Effect_size_of_feature, 2),
+                                      '\nP: ', signif(df$P_ANOVA_of_feature, 2)))
+        if(isIntr){
+            km_df <- rbind(km_df, do.call(rbind, lapply(1:2, function(i){
+                v <- df[[paste0('feature',i,'_variable')]]
+                n <- ifelse(i == 1, 'first', 'second')
+                fit <- survival::survfit(as.formula(paste0('survival::Surv(time, status) ~ ', v)), data_vars)
+                cbind(get_km_df(fit, custom_levels, max_time),
+                      title = paste0('Feature: ', df[[paste0('feature',i)]],
+                                     '\nLevel: ', df[[paste0('feature',i,'_level')]],
+                                     '\nN. samples: ', sum(data_vars[[v]]), '/', nrow(data_vars),
+                                     '\nlogHR: ', signif(df[[paste0('Effect_size_of_',n,'_variable')]], 2),
+                                     '\nP: ', signif(df[[paste0('P_ANOVA_of_',n,'_variable')]], 2)))
+            })))
+        }
+        return(km_df)
+    }))
+    
+    km_df$title <- factor(km_df$title, levels = unique(km_df$title))
+    ggplot()+theme_bw()+
+        geom_segment(data = km_df, aes(x=x, xend=xend, y=y, yend=yend, color=strata, linewidth=linewidth))+
+        scale_linewidth_continuous(range = c(0.3, 0.6), guide = 'none')+
+        scale_y_continuous(limits = c(0, 1))+
+        scale_x_continuous(limits = c(0, max_time))+
+        facet_wrap(~title, nrow = NR)+
+        scale_color_manual(values = colors, name=NULL)+
+        ylab('Survival P')+xlab('Time')+
+        theme(panel.grid = element_blank(),
+              strip.text.x = element_text(hjust=0),
+              strip.background.x = element_blank())
 }
+
+
+
+
+
+
+
+
+
+

@@ -123,7 +123,7 @@ PACIFIC <- function(data,
     data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
     colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
     colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
-    km_plot_list <- plot_km(data_vars, features)
+    km_plot_list <- sapply(unique(features$id), get_km_plot, features=features, data_vars=data_vars, simplify = FALSE, USE.NAMES = TRUE)
     # -------------------------------------------------------------------------------------------
     rownames(features) <- NULL
     
@@ -536,7 +536,6 @@ PACIFIC_step2 <- function(step1_output_dir,
                           EN_cutoff = 50,
                           anova_baseline = NA, 
                           verbose = FALSE){
-    # if(plot_km) require(ggplot2)
     # ---------------------------------------------------------------------------------------------
     records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
     family <- records$family
