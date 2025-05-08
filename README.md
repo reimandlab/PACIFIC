@@ -99,7 +99,7 @@ results <- PACIFIC_survival_step2(step1_output_dir = 'out',
 # elapsed time: 0.601191 secs 
 ```
 
-The returned `results` is saved in ".RDS" format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
+The returned `results` is saved in .RDS format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
 ```R
 results$top_interactions
 
@@ -143,8 +143,8 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
 
 ## Scalability
-You can repeat the "Step 1" of PACIFIC through independent calls of the function to accumulate the desired total number of iterations. To do so, please note the following:
+You can repeat the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations. To do so, please note the following:
 - Each call must use a unique `job_index`. The pipeline tracks job indices already used for the specified output directory. Any call that reuses a previously used job index for that output directory is explicitly prevented with an error message.
 - All calls must use exactly the same arguments, except for `job_index`, which must differ, and `num_iterations`, which may vary across the calls. Any inconsistent call is explicitly prevented with an error message.
-- Once the desired total number of iterations has been reached, the "Step 2" function should be called with the same output directory to aggregate the iterations and produce the final results.
+- Once the desired total number of iterations has been reached, the **Step 2** function should be called with the same output directory to aggregate the iterations and produce the final results.
  
