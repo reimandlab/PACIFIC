@@ -58,20 +58,22 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 #3:        0.001416327  0.07765524              0.000000000
 #4:        0.003790870  0.03094862              0.000000000
 #5:        0.036007745  0.17967422              0.040558222
+```
 
 
+```R
 ####
-# Apply PACIFIC to the data with the defined features (using default settings):
+# Apply PACIFIC to the data with the defined features (using default settings).
 ####
 
 set.seed(1) # for reproducibility of this demo
 
-results <- PACIFIC(data = data,
-                   baseline = baseline,
-                   feat1 = feat1,
-                   feat2 = feat2,
-                   num_iterations = 10,
-                   output_dir = 'out')
+results <- PACIFIC_survival_step1(data = data,
+                                  baseline = baseline,
+                                  feat1 = feat1,
+                                  feat2 = feat2,
+                                  num_iterations = 10,
+                                  output_dir = 'out')
 
 # ----------------------------------------------------
 # PACIFIC step 1:
