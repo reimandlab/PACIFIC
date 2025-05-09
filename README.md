@@ -144,7 +144,7 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 
 ## Scalability
 You can repeat the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations. To do so, please note the following:
-- Each call must be given a unique `job_index` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
-- All calls must use exactly the same arguments, except for `job_index`, which must differ, and `num_iterations`, which may vary across the calls. Any inconsistent call is prevented with an error message.
+- Each call of **Step 1** must be given a unique `job_index` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
+- Other than `job_index`, `num_iterations`, and `verbose`, every arguments to the **Step 1** call must remain the same across the repeated calls. Any inconsistent call is prevented with an error message.
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called with the same output directory to aggregate the iterations and produce the final results.
  
