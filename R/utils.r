@@ -230,7 +230,7 @@ elastic_net_variable_selection <- function(family, data, variables){
 wait_for_file_to_stabilize <- function(p){
     while(TRUE){ 
         s <- file.info(p)$size
-        Sys.sleep(3)
+        Sys.sleep(0.1)
         if(s == file.info(p)$size) break 
     } 
 }
