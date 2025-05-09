@@ -79,18 +79,19 @@ PACIFIC_survival_step1(data = data,
                        output_dir = 'out')
 # ----------------------------------------------------
 # PACIFIC step 1:
-# preprocessing ... 0.06038189 secs 
-# iteration 1/10 : 11 features selected by Elastic net. 0.227638 secs 
-# iteration 2/10 : 8 features selected by Elastic net. 0.2311988 secs 
-# iteration 3/10 : 1 features selected by Elastic net. 0.2655289 secs 
-# iteration 4/10 : 10 features selected by Elastic net. 0.2355261 secs 
-# iteration 5/10 : 13 features selected by Elastic net. 0.2278142 secs 
-# iteration 6/10 : 16 features selected by Elastic net. 0.2753899 secs 
-# iteration 7/10 : 14 features selected by Elastic net. 0.2690251 secs 
-# iteration 8/10 : 13 features selected by Elastic net. 0.231288 secs 
-# iteration 9/10 : 4 features selected by Elastic net. 0.2364419 secs 
-# iteration 10/10 : 12 features selected by Elastic net. 0.2437558 secs 
-# elapsed time: 2.506445 secs
+# preprocessing ... 0.406163 secs 
+# iteration 1/10 : 11 features selected by Elastic net. 0.2405679 secs 
+# iteration 2/10 : 8 features selected by Elastic net. 0.2378569 secs 
+# iteration 3/10 : 1 features selected by Elastic net. 0.267096 secs 
+# iteration 4/10 : 10 features selected by Elastic net. 0.236763 secs 
+# iteration 5/10 : 13 features selected by Elastic net. 0.225141 secs 
+# iteration 6/10 : 16 features selected by Elastic net. 0.4042552 secs 
+# iteration 7/10 : 14 features selected by Elastic net. 0.2572432 secs 
+# iteration 8/10 : 13 features selected by Elastic net. 0.224154 secs 
+# iteration 9/10 : 4 features selected by Elastic net. 0.2320871 secs 
+# iteration 10/10 : 12 features selected by Elastic net. 0.2292762 secs 
+# saving the results ... 0.0007610321 secs 
+# total elapsed time: 2.962891 secs 
 
 results <- PACIFIC_survival_step2(step1_output_dir = 'out',
                                   anova_baseline = baseline)
@@ -143,8 +144,8 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
 
 ## Scalability
-You can repeat the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations. To do so, please note the following:
+You can **repeat** the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations **in the same output directory**. To do so, please note the following:
 - Each call of **Step 1** must be given a unique `job_index` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
-- Other than `job_index`, `num_iterations`, and `verbose`, every arguments to the **Step 1** call must remain the same across the repeated calls. Any inconsistent call is prevented with an error message.
+- Other than `job_index`, `num_iterations`, and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Any inconsistent call is prevented with an error message.
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called with the same output directory to aggregate the iterations and produce the final results.
  
