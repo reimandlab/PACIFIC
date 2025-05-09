@@ -16,6 +16,7 @@ PACIFIC_survival_step1(
   num_iterations = 10,
   EN_cutoff = 50,
   output_dir,
+  job_index = 1,
   verbose = TRUE
 )
 }

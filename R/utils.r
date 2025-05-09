@@ -226,6 +226,7 @@ elastic_net_variable_selection <- function(family, data, variables){
     return(selected_variables)
 }
 
+# Wait for the file stored in the given path to stablize. Wait until it's 'size' stops changing
 wait_for_file_to_stabilize <- function(p){
     while(TRUE){ 
         s <- file.info(p)$size

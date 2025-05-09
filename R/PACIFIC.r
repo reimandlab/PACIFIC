@@ -24,6 +24,7 @@ PACIFIC_survival_step1 <- function(data,
                                    num_iterations = 10, 
                                    EN_cutoff = 50,
                                    output_dir, 
+                                   job_index = 1,
                                    verbose = TRUE){
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -72,9 +73,6 @@ PACIFIC_survival_step1 <- function(data,
         }
     }
     
-    # throw error if output_dir already exists, otherwise create it
-    if(dir.exists(output_dir)) stop('"output_dir" already exists')
-    dir.create(output_dir, recursive = T, showWarnings = F)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    
     PACIFIC_step1(data = data,
@@ -88,6 +86,7 @@ PACIFIC_survival_step1 <- function(data,
                   features_to_skip_univariate_association_prefiltering = features_to_skip_univariate_association_prefiltering,
                   num_iterations = num_iterations, 
                   output_dir = output_dir, 
+                  job_index = job_index,
                   verbose = verbose)
 }
 
@@ -96,14 +95,14 @@ PACIFIC_survival_step1 <- function(data,
 #' Run step 2 of PACIFIC for survival outcomes
 #' 
 #' @export
-PACIFIC_survival_step2 <- function(step1_output_dir, 
+PACIFIC_survival_step2 <- function(output_dir, 
                                    EN_cutoff = 50,
                                    anova_baseline = NA, 
                                    verbose = TRUE){
     
     S.TM <- Sys.time()
     if(verbose){ cat('----------------------------------------------------\nPACIFIC step 2:\n'); flush.console() }
-    features <- PACIFIC_step2(step1_output_dir = step1_output_dir, 
+    features <- PACIFIC_step2(output_dir = output_dir, 
                               anova_baseline = anova_baseline, 
                               EN_cutoff = EN_cutoff)
     # -------------------------------------------------------------------------------------------
@@ -121,7 +120,7 @@ PACIFIC_survival_step2 <- function(step1_output_dir,
         return(NULL)
     }
     # -------------------------------------------------------------------------------------------
-    data_vars <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))$data_vars
+    data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
     colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
     colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
     km_plot_list <- sapply(unique(features$id), get_km_plot, features=features, data_vars=data_vars, simplify = FALSE, USE.NAMES = TRUE)
@@ -161,7 +160,7 @@ PACIFIC_survival_step2 <- function(step1_output_dir,
     # -------------------------------------------------------------------------------------------
     results <- list(top_interactions=features, km_plot_list=km_plot_list)
     
-    saveRDS(results, paste0(step1_output_dir, '/results.rds'))
+    saveRDS(results, paste0(output_dir, '/aggregated-results.rds'))
     
     F.TM <- Sys.time()
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
@@ -200,8 +199,9 @@ PACIFIC_step1 <- function(data,
                           sparsity_criterion = '5_percent',
                           univariate_p_cutoff = 0.1,
                           subsampling_ratio = 0.8,
-                          num_iterations = 10,
+                          num_iterations,
                           output_dir,
+                          job_index = 1,
                           verbose = FALSE){
 
     S.TM <- Sys.time()
@@ -210,23 +210,47 @@ PACIFIC_step1 <- function(data,
     if(verbose){ cat('preprocessing ... '); flush.console() }
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    # create output_dir if it does not exist
-    if(!dir.exists(output_dir)) dir.create(output_dir, recursive = T, showWarnings = F)
-    # input arguments are saved in a specific file in output_dir
-    pth <- paste0(output_dir, '/step1-args.RData')
-    # if this is the first iteration, save the input arguments in the output_dir
-    if(!file.exists(pth)){
-        # all args saved except for "num_iteratoins" as it may differ between runs
-        save(list = setdiff(ls(), c('num_iterations','verbose','S.TM')), file = pth)
-    } else { # otherwise, check the consistency of input arguments with previous call(s)
-        wait_for_file_to_stabilize(pth)
-        load(pth, previous_args <- new.env())
-        for(v in ls(previous_args)){
-            if(!all(TRUE == suppressWarnings(all.equal(get(v), previous_args[[v]])))){
-                stop(paste0('"', v, '": argument inconsistent with previous iterations'))
-            }
-        }    
+    
+    
+    # create the output_dir. If it exists, this does nothing
+    dir.create(output_dir, recursive = T, showWarnings = F)
+    
+    
+    # the list of job-indices is saved in a specific file in output_dir
+    job_indices_pth <- paste0(output_dir, '/step1-job-indices.rds')
+    if(file.exists(job_indices_pth)){
+        # load previously used job-indices
+        wait_for_file_to_stabilize(job_indices_pth); job_indices <- readRDS(job_indices_pth)
+        # throw error if the input job-index is not unique among the previously used ones
+        if(job_index %in% job_indices) stop(paste0('The job-index "', job_index, '" has already been used. Choose a unique index for this job.'))
+        # append the input job-index to the list of previously used ones
+        job_indices <- c(job_indices, job_index)
+        # save the new list of job-indices
+        saveRDS(job_indices, job_indices_pth)
+    } else {
+        # just save the file for the first time
+        saveRDS(job_index, job_indices_pth)
     }
+    
+    
+    # the list of 'conserved arguements of the function' is saved in a specific file in output_dir
+    conserved_args_pth <- paste0(output_dir, '/step1-args.rds')
+    # get the list of input arguments of the function
+    input_args <- as.list(modifyList(formals(sys.function()), as.list(match.call())[-1]))
+    # remove the non-conserved arguments from this list, i.e. the ones that are not necessary to be consistent across the calls 
+    input_args[c('job_index', 'num_iterations', 'verbose')] <- NULL
+    # save the file for the first time
+    if(!file.exists(conserved_args_pth)) saveRDS(input_args, conserved_args_pth)
+    # load the 'conserved arguements'
+    wait_for_file_to_stabilize(conserved_args_pth); conserved_args <- readRDS(conserved_args_pth)
+    # throw error if the input arguments are not consistent with the conserved arguements
+    check <- all.equal(input_args, conserved_args)
+    if(!isTRUE(check)){
+        inconsistent_arg_names <- sapply(strsplit(sapply(strsplit(check, "\u201c"), '[', 2), "\u201d"), '[', 1)
+        stop(paste0('Some input arguments are inconsistent with the previous calls of step-1: ', paste(inconsistent_arg_names, collapse = ', ')))
+    }
+    
+    
     # validate arg data
     if(!is.data.frame(data)) stop('"data" should be a data.frame or an instance of a class extended from data.frame')
     data <- as.data.frame(data)
@@ -510,42 +534,33 @@ PACIFIC_step1 <- function(data,
         return(selected_variables)
     })
 
-    # if(verbose){ cat(paste0('save the results in: ', normalizePath(output_dir),'\n')); flush.console() }
     
-    # >>> save the results in the output_dir
-    # check if this is not overwriting an existing file, if so, wait 1 sec and check again...
-    while(TRUE){
-        # timestamp: microSeconds since the reference date (1/1/1970)
-        timestamp <- format(as.numeric(Sys.time())*1e6, scientific=F)
-        pth <- paste0(output_dir, 
-                      '/step1-results',
-                      '-N-iters-', num_iterations, 
-                      '-timestamp-', timestamp, 
-                      '.rds')
-        if(!file.exists(pth)) break
-        Sys.sleep(runif(1)) # wait for some random time from 0 to 1
-    }
-    saveRDS(res, pth)
-
+    S.TM.saving <- Sys.time()
+    if(verbose){ cat('saving the results ... '); flush.console() }
+    saveRDS(res, paste0(output_dir, '/step1-results', '-job-', job_index, '-iters-', num_iterations, '.rds'))
+    F.TM.saving <- Sys.time()
+    if(verbose){ cat(format(F.TM.saving - S.TM.saving), '\n'); flush.console() }
+    
+    
     F.TM <- Sys.time()
-    if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
+    if(verbose){ cat('total elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
 }
 
-# step1_output_dir WIP
+# output_dir WIP
 # EN_cutoff WIP
 # anova_baseline WIP
-PACIFIC_step2 <- function(step1_output_dir, 
+PACIFIC_step2 <- function(output_dir, 
                           EN_cutoff = 50,
                           anova_baseline = NA, 
                           verbose = FALSE){
     # ---------------------------------------------------------------------------------------------
-    records <- readRDS(paste0(step1_output_dir, '/step1-records.rds'))
+    records <- readRDS(paste0(output_dir, '/step1-records.rds'))
     family <- records$family
     data <- records$data
     data_vars <- records$data_vars
     features <- records$features
     # ---------------------------------------------------------------------------------------------
-    S <- lapply(list.files(step1_output_dir, pattern = 'step1-results', full.names = T), readRDS)
+    S <- lapply(list.files(output_dir, pattern = 'step1-results', full.names = T), readRDS)
     N <- sum(sapply(S, length))
     if(0 == length(unlist(S))){ if(verbose) cat('No feature selected by EN in step1\n'); return(NULL) }
     S <- sort(100 * table(unlist(S)) / N, decreasing = T)

@@ -5,7 +5,7 @@
 \title{Run step 2 of PACIFIC for survival outcomes}
 \usage{
 PACIFIC_survival_step2(
-  step1_output_dir,
+  output_dir,
   EN_cutoff = 50,
   anova_baseline = NA,
   verbose = TRUE
