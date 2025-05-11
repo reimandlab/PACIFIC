@@ -132,7 +132,7 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 ```
 <img src="inst/extdata/KMs_KMT2D_Monocytes.jpg" width="100%">
 
-#### Notes
+## Technical Notes
 - We recommend highlighting only the interactions for which all of the following ANOVA tests are significant after FDR correction (available in `results$top_interactions`):
    - `intr_P`: interaction *vs.* baseline
    - `intr_P_C1`: interaction *vs.* baseline + feat1
