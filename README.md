@@ -131,6 +131,7 @@ The KM plots for the top interactions are stored in a named list in the `$km_plo
 plot(results$km_plot_list[['KMT2D*Monocytes']])
 ```
 <img src="inst/extdata/KMs_KMT2D_Monocytes.jpg" width="100%">
+
 #### Notes
 - We recommend highlighting only the interactions for which all of the following ANOVA tests are significant after FDR correction (available in `results$top_interactions`):
    - `intr_P`: interaction *vs.* baseline
