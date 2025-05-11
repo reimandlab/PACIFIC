@@ -150,6 +150,8 @@ You can **repeat** the **Step 1** of PACIFIC through independent calls of the fu
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called for the given output directory to aggregate the iterations and produce the final results.
 #### Local parallelism via `mclapply()`
 ```R
+library(PACIFIC)
+
 ####
 # Using the setting of the basic example abobe. 
 ####
@@ -164,12 +166,13 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
            "T_cells_CD8","T_cells_regulatory_Tregs")
 
 ####
-# Run step1 for 10 times using 5 parallel cores
+# Run a total of 500 step1 iterations,
+# using 10 parallel cores, with 50 internal iterations per task.
 ####
 
 library(parallel)
 
-ncores <- 5
+ncores <- 10
 stopifnot(ncores <= detectCores())
 
 status <- mclapply(1:10, function(job_id){
@@ -177,21 +180,16 @@ status <- mclapply(1:10, function(job_id){
                            baseline = baseline,
                            feat1 = feat1,
                            feat2 = feat2,
-                           num_iterations = 10,
+                           num_iterations = 50,
                            output_dir = 'out',
                            job_id = job_id)
 }, mc.cores = ncores)
 
-if(!all(status == 0)) message('All tasks completed successfully!')
+if(all(0 == unlist(status))) message('All tasks completed successfully!')
 
 ####
 # If any individual task raises an error, it can be inspected via the `status` list.
 ####
-```
-
-#### HPC-based parallelism
-```R
-# step1 calls can be distributed as they are independent of each other.
 ```
 
 
