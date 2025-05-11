@@ -172,7 +172,7 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
 ####
 
 ncores <- 10
-stopifnot(ncores <= detectCores())
+if(ncores > detectCores()) stop('Number of requested cores exceeds the available cores.')
 
 status <- mclapply(1:10, function(job_id){
     PACIFIC_survival_step1(data = data,
