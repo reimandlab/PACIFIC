@@ -61,7 +61,7 @@ data[1:5 , c("time", "status", baseline, feat1, feat2)]
 ```
 
 PACIFIC pipeline runs in two steps:
-- **Step 1**: To run the iterative procedure. This step can be repeated through independent calls to accumulate the desired **total** number of iterations in a specified output directory, enabling scalability in distributed computing systems (e.g., HPC). See the **'Scalability'** section for more information.
+- **Step 1**: To run the iterative procedure. This step can be repeated through independent calls to accumulate the desired **total** number of iterations in a specified output directory, enabling parallel runs. See the **'Scalability'** section for more information.
 - **Step 2**: To aggregate the resutls of all iterations accumulated in the output directory. At this step, the candidate interactions (those selected in ≥50% of iterations) are identified, and their ANOVA p-values are calculated. The 50% cutoff can be adjusted by the user.
 
 ```R
@@ -145,7 +145,47 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 
 ## Scalability
 You can **repeat** the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations **in the same output directory**. To do so, please note the following:
-- Each call of **Step 1** must be given a unique `job_index` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
-- Other than `job_index`, `num_iterations`, and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Any inconsistent call for the given output directory is prevented with an error message.
+- Each call of **Step 1** must be given a unique `job_id` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
+- Other than `job_id`, `num_iterations`, and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Any inconsistent call for the given output directory is prevented with an error message.
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called for the given output directory to aggregate the iterations and produce the final results.
+#### Local parallelism via `mclapply()`
+```R
+####
+# Using the setting of the basic example abobe. 
+####
+
+fname_data <- system.file("extdata", "example_dataset.rds", package = "PACIFIC")
+data <- readRDS(fname_data)
+baseline <- c("age", "sex", "stage")
+feat1 <- c("TP53", "KMT2D", "CDKN2A", "KRAS")
+feat2 <- c("B_cells_memory", "Plasma_cells", 
+           "Macrophages_M1", "Macrophages_M2", 
+           "Monocytes", "NK_cells_activated", 
+           "T_cells_CD8","T_cells_regulatory_Tregs")
+
+####
+# Run step1 for 10 times using 5 parallel cores
+####
+
+library(parallel)
+
+ncores <- 5
+stopifnot(ncores <= detectCores())
+
+status <- mclapply(1:10, function(job_id){
+    PACIFIC_survival_step1(data = data,
+                           baseline = baseline,
+                           feat1 = feat1,
+                           feat2 = feat2,
+                           num_iterations = 10,
+                           output_dir = 'out',
+                           job_id = job_id)
+}, mc.cores = ncores)
+
+if(!all(status == 0)) message('All tasks completed successfully!')
+
+####
+# If any individual task raises an error, it can be inspected via the `status` list.
+####
+```
  
