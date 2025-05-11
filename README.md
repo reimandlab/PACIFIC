@@ -192,4 +192,9 @@ if(all(0 == unlist(status))) message('All tasks completed successfully!')
 ####
 ```
 
+#### HPC-based parallelism
+```R
+# step1 calls can be distributed as they are independent of each other.
+```
+
 
