@@ -151,6 +151,7 @@ You can **repeat** the **Step 1** of PACIFIC through independent calls of the fu
 #### Local parallelism via `mclapply()`
 ```R
 library(PACIFIC)
+library(parallel)
 
 ####
 # Using the setting of the basic example abobe. 
@@ -169,8 +170,6 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
 # Run a total of 500 step1 iterations,
 # using 10 parallel cores, with 50 internal iterations per task.
 ####
-
-library(parallel)
 
 ncores <- 10
 stopifnot(ncores <= detectCores())
