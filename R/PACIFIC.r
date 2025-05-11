@@ -24,7 +24,7 @@ PACIFIC_survival_step1 <- function(data,
                                    num_iterations = 10, 
                                    EN_cutoff = 50,
                                    output_dir, 
-                                   job_index = 1,
+                                   job_id = 1,
                                    verbose = TRUE){
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -86,7 +86,7 @@ PACIFIC_survival_step1 <- function(data,
                   features_to_skip_univariate_association_prefiltering = features_to_skip_univariate_association_prefiltering,
                   num_iterations = num_iterations, 
                   output_dir = output_dir, 
-                  job_index = job_index,
+                  job_id = job_id,
                   verbose = verbose)
 }
 
@@ -201,7 +201,7 @@ PACIFIC_step1 <- function(data,
                           subsampling_ratio = 0.8,
                           num_iterations,
                           output_dir,
-                          job_index = 1,
+                          job_id = 1,
                           verbose = FALSE){
 
     S.TM <- Sys.time()
@@ -211,45 +211,42 @@ PACIFIC_step1 <- function(data,
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     
-    
     # create the output_dir. If it exists, this does nothing
     dir.create(output_dir, recursive = T, showWarnings = F)
     
     
-    # the list of job-indices is saved in a specific file in output_dir
-    job_indices_pth <- paste0(output_dir, '/step1-job-indices.rds')
-    if(file.exists(job_indices_pth)){
-        # load previously used job-indices
-        wait_for_file_to_stabilize(job_indices_pth); job_indices <- readRDS(job_indices_pth)
-        # throw error if the input job-index is not unique among the previously used ones
-        if(job_index %in% job_indices) stop(paste0('The job-index "', job_index, '" has already been used. Choose a unique index for this job.'))
-        # append the input job-index to the list of previously used ones
-        job_indices <- c(job_indices, job_index)
-        # save the new list of job-indices
-        saveRDS(job_indices, job_indices_pth)
-    } else {
-        # just save the file for the first time
-        saveRDS(job_index, job_indices_pth)
+    # the vector of job ids is saved in a specific file in output_dir
+    job_ids_pth <- paste0(output_dir, '/step1-job-ids.rds')
+    # load or initialize (it first call)
+    safe <- safe_read_or_initialize(job_ids_pth, job_id)
+    previous_job_ids <- safe$value
+    if(!safe$initialized){
+        # throw error if the input job id is not unique among the previously used ones
+        if(job_id %in% previous_job_ids) stop(paste0('The job id "', job_id, '" has already been used. Choose a unique id for this job.'))
+        # append the input job id to the list of previously used ones
+        current_job_ids <- c(previous_job_ids, job_id)
+        # save the new list of job ids
+        saveRDS(current_job_ids, job_ids_pth)
     }
-    
     
     # the list of 'conserved arguements of the function' is saved in a specific file in output_dir
     conserved_args_pth <- paste0(output_dir, '/step1-args.rds')
     # get the list of input arguments of the function
-    input_args <- as.list(modifyList(formals(sys.function()), as.list(match.call())[-1]))
+    input_args <- sapply(names(formals(sys.function())), get, envir = environment(), simplify = F, USE.NAMES = T)
     # remove the non-conserved arguments from this list, i.e. the ones that are not necessary to be consistent across the calls 
-    input_args[c('job_index', 'num_iterations', 'verbose')] <- NULL
-    # save the file for the first time
-    if(!file.exists(conserved_args_pth)) saveRDS(input_args, conserved_args_pth)
-    # load the 'conserved arguements'
-    wait_for_file_to_stabilize(conserved_args_pth); conserved_args <- readRDS(conserved_args_pth)
-    # throw error if the input arguments are not consistent with the conserved arguements
-    check <- all.equal(input_args, conserved_args)
-    if(!isTRUE(check)){
-        inconsistent_arg_names <- sapply(strsplit(sapply(strsplit(check, "\u201c"), '[', 2), "\u201d"), '[', 1)
-        stop(paste0('Some input arguments are inconsistent with the previous calls of step-1: ', paste(inconsistent_arg_names, collapse = ', ')))
+    input_args[c('job_id', 'num_iterations', 'verbose')] <- NULL
+    # load or initialize (it first call)
+    safe <- safe_read_or_initialize(conserved_args_pth, input_args)
+    conserved_args <- safe$value
+    if(!safe$initialized){
+        # throw error if the input arguments are not consistent with the conserved arguements
+        check <- all.equal(input_args, conserved_args)
+        if(!isTRUE(check)){
+            # inconsistent_arg_names <- unique(sapply(strsplit(sapply(strsplit(check, "\u201c"), '[', 2), "\u201d"), '[', 1))
+            # stop(paste0(', paste(inconsistent_arg_names, collapse = ', ')))
+            stop(paste0('\n\nSome input arguments are inconsistent with the previous calls of step-1. Here is the error message:\n', check))
+        }
     }
-    
     
     # validate arg data
     if(!is.data.frame(data)) stop('"data" should be a data.frame or an instance of a class extended from data.frame')
@@ -432,25 +429,24 @@ PACIFIC_step1 <- function(data,
     # >>> get data table of variables based on "data_disc" and "features" -> "data_vars"
     data_vars <- make_data_for_variables(data = data_disc, features = features)
 
+    
     # >>> create the "records", save in "output_dir", and check the consistency with previous iterations
     # "records" = list("family", "data", "data_vars", "features")
     # to save in "records", remove "group" column from "features" and unique its rows
     temp_features <- unique(subset(features, select = -group))
     rownames(temp_features) <- NULL
-    records <- list(family = family,
-                    data = data, 
-                    data_vars = data_vars, 
-                    features = temp_features)
+    records <- list(family = family, data = data, data_vars = data_vars, features = temp_features)
     rm(temp_features)
-    pth <- paste0(output_dir, '/step1-records.rds')
-    # if first iteration: save "records" in output_dir, else: "records" must be identical to that of previous iteratoins.
-    if(!file.exists(pth)){ saveRDS(records, pth) } else {
-        wait_for_file_to_stabilize(pth)
-        if(!identical(records, readRDS(pth))){
-            stop('the processed data and features are inconsistent with previous iterations')
-        }
+    # path for storing the records 
+    conserved_records_pth <- paste0(output_dir, '/step1-records.rds')
+    # load the 'conserved records' from conserved_records_pth or initialize the file for the first call
+    safe <- safe_read_or_initialize(conserved_records_pth, records)
+    conserved_records <- safe$value
+    if(!safe$initialized){
+        # throw error if the current records is not consistent with the conserved paste0
+        if(!identical(records, conserved_records)) stop('the processed data and features are inconsistent with previous iterations')
     }
-
+    
     F.TM <- Sys.time()
     if(verbose){ cat(format(F.TM - S.TM), '\n'); flush.console() }
     
@@ -537,13 +533,15 @@ PACIFIC_step1 <- function(data,
     
     S.TM.saving <- Sys.time()
     if(verbose){ cat('saving the results ... '); flush.console() }
-    saveRDS(res, paste0(output_dir, '/step1-results', '-job-', job_index, '-iters-', num_iterations, '.rds'))
+    saveRDS(res, paste0(output_dir, '/step1-results', '-job-', job_id, '-iters-', num_iterations, '.rds'))
     F.TM.saving <- Sys.time()
     if(verbose){ cat(format(F.TM.saving - S.TM.saving), '\n'); flush.console() }
     
     
     F.TM <- Sys.time()
     if(verbose){ cat('total elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
+    
+    return(0)
 }
 
 # output_dir WIP

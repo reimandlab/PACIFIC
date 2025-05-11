@@ -226,16 +226,6 @@ elastic_net_variable_selection <- function(family, data, variables){
     return(selected_variables)
 }
 
-# Wait for the file stored in the given path to stablize. Wait until it's 'size' stops changing
-wait_for_file_to_stabilize <- function(p){
-    while(TRUE){ 
-        s <- file.info(p)$size
-        Sys.sleep(0.1)
-        if(s == file.info(p)$size) break 
-    } 
-}
-
-
 # Get data.frame of Kaplan–Meier estimator
 get_km_df <- function(fit, custom_levels, max_time){
     stopifnot(length(fit$strata) == length(custom_levels))
@@ -328,7 +318,48 @@ get_km_plot <- function(this_id, features, data_vars){
 
 
 
+wait_for_file_ready <- function(path, check_interval = 0.5, max_wait = 30) {
+    waited <- 0
+    last_size <- 0
+    while (waited < max_wait) {
+        if (file.exists(path)) {
+            current_size <- file.info(path)$size
+            if (!is.na(current_size) && current_size == last_size && current_size > 0) {
+                return(TRUE)
+            }
+            last_size <- current_size
+        }
+        Sys.sleep(check_interval)
+        waited <- waited + check_interval
+    }
+    stop("Timeout: reference file did not stabilize.")
+}
 
+
+safe_read_or_initialize <- function(ref_path, init_value, lock_path = paste0(ref_path, ".lock")) {
+    initialized <- FALSE
+    if (!file.exists(ref_path)) {
+        # Try to create lock file atomically
+        success <- tryCatch({
+            lock_file <- file(lock_path, open = "wx")
+            close(lock_file)
+            TRUE
+        }, error = function(e) FALSE)
+        # lock is obtained; initialize it
+        if (success) {
+            saveRDS(init_value, ref_path)
+            initialized <- TRUE
+            file.remove(lock_path)
+        } else {
+            # Another process is writing; wait for it
+            wait_for_file_ready(ref_path)
+        }
+    } else {
+        # File exists but may be half-written; still wait
+        wait_for_file_ready(ref_path)
+    }
+    list(value=readRDS(ref_path), initialized=initialized)
+}
 
 
 
