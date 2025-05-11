@@ -188,4 +188,7 @@ if(!all(status == 0)) message('All tasks completed successfully!')
 # If any individual task raises an error, it can be inspected via the `status` list.
 ####
 ```
- 
+
+#### HPC-based parallelism
+Since step1 calls are independent, they can be executed in parallel across different computing nodes.
+
