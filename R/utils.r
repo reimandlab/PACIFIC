@@ -318,7 +318,7 @@ get_km_plot <- function(this_id, features, data_vars){
 
 
 
-wait_for_file_ready <- function(path, check_interval = 0.5, max_wait = 30) {
+wait_for_file_ready <- function(path, check_interval = 1, max_wait = 30) {
     waited <- 0
     last_size <- 0
     while (waited < max_wait) {
@@ -348,8 +348,12 @@ safe_read_or_initialize <- function(ref_path, init_value, lock_path = paste0(ref
         # lock is obtained; initialize it
         if (success) {
             saveRDS(init_value, ref_path)
-            initialized <- TRUE
+            # ensure the file system flushes all writes
+            system(paste("sync", shQuote(ref_path)))
+            # remove the lock
             file.remove(lock_path)
+            # flag initialized
+            initialized <- TRUE
         } else {
             # Another process is writing; wait for it
             wait_for_file_ready(ref_path)
