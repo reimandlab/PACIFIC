@@ -191,7 +191,7 @@ if(!all(status == 0)) message('All tasks completed successfully!')
 
 #### HPC-based parallelism
 ```R
-# Since step1 calls are independent, they can be executed in parallel across different computing nodes.
+# step1 calls can be distributed as they are independent of each other.
 ```
 
 
