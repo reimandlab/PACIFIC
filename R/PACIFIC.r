@@ -510,6 +510,8 @@ PACIFIC_step1 <- function(data,
     
     F.TM <- Sys.time()
     if(verbose){ cat('total elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
+
+    return(TRUE)
 }
 
 # output_dir WIP
