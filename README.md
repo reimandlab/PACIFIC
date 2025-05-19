@@ -145,7 +145,7 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 
 ## Scalability
 You can **repeat** the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations **in the same output directory**. Note the following:
-- Other than `num_iterations` and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Otherwise, an error will be raised in Step 2.
+- Other than `num_iterations` and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Otherwise, an error will be raised in **Step 2**.
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called for the given output directory to aggregate the iterations and produce the final results.
 #### Local parallelism via `mclapply()`
 ```R
