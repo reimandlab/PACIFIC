@@ -71,12 +71,12 @@ PACIFIC pipeline runs in two steps:
 
 set.seed(1) # for reproducibility of this demo
 
-PACIFIC_survival_step1(data = data,
-                       baseline = baseline,
-                       feat1 = feat1,
-                       feat2 = feat2,
-                       num_iterations = 10,
-                       output_dir = 'out')
+status <- PACIFIC_survival_step1(data = data,
+                                 baseline = baseline,
+                                 feat1 = feat1,
+                                 feat2 = feat2,
+                                 num_iterations = 10,
+                                 output_dir = 'out')
 # ----------------------------------------------------
 # PACIFIC step 1:
 # preprocessing ... 0.406163 secs 
@@ -144,9 +144,8 @@ plot(results$km_plot_list[['KMT2D*Monocytes']])
 - Usually more than 1000 iterations are needed for stable results (depending on the complexity of the input data).
 
 ## Scalability
-You can **repeat** the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations **in the same output directory**. To do so, please note the following:
-- Each call of **Step 1** must be given a unique `job_id` argument. Any call that reuses a previously used job index for the given output directory is prevented with an error message.
-- Other than `job_id`, `num_iterations`, and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Any inconsistent call for the given output directory is prevented with an error message.
+You can **repeat** the **Step 1** of PACIFIC through independent calls of the function to accumulate the desired total number of iterations **in the same output directory**. Note the following:
+- Other than `num_iterations` and `verbose`, all arguments to the **Step 1** call must remain consistent across the repeated calls. Otherwise, an error will be raised in Step 2.
 - Once the desired total number of iterations has been reached, the **Step 2** function should be called for the given output directory to aggregate the iterations and produce the final results.
 #### Local parallelism via `mclapply()`
 ```R
@@ -167,27 +166,26 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
            "T_cells_CD8","T_cells_regulatory_Tregs")
 
 ####
-# Run a total of 500 step1 iterations,
-# using 10 parallel cores, with 50 internal iterations per task.
+# Run a total of 1000 step1 iterations via 10 calls with 100 internal iterations.
+# Using 5 cores.
 ####
 
-ncores <- 10
+ncores <- 5
 if(ncores > detectCores()) stop('Number of requested cores exceeds the available cores.')
 
-status <- mclapply(1:10, function(job_id){
+status <- mclapply(seq(10), function(...){
     PACIFIC_survival_step1(data = data,
                            baseline = baseline,
                            feat1 = feat1,
                            feat2 = feat2,
-                           num_iterations = 50,
-                           output_dir = 'out',
-                           job_id = job_id)
+                           num_iterations = 100,
+                           output_dir = 'out')
 }, mc.cores = ncores)
 
-if(all(0 == unlist(status))) message('All tasks completed successfully!')
+if(all(status)) message('All tasks completed successfully!')
 
 ####
-# If any individual task raises an error, it can be inspected via the `status` list.
+# If any task raises an error, it can be inspected via `status` list.
 ####
 ```
 
