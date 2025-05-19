@@ -184,7 +184,7 @@ status <- mclapply(seq(10), function(...){
                            output_dir = 'out')
 }, mc.cores = ncores)
 
-if(all(status)) message('All tasks completed successfully!')
+if(isTRUE(unique(unlist(status)))) message('All tasks completed successfully!')
 
 ####
 # If any task raises an error, it can be inspected via `status` list.
