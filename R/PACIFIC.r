@@ -100,10 +100,11 @@ PACIFIC_survival_step2 <- function(output_dir,
     
     S.TM <- Sys.time()
     if(verbose){ cat('----------------------------------------------------\nPACIFIC step 2:\n'); flush.console() }
-    features <- PACIFIC_step2(output_dir = output_dir, 
-                              anova_baseline = anova_baseline, 
-                              EN_cutoff = EN_cutoff)
+    step2 <- PACIFIC_step2(output_dir = output_dir, 
+                           anova_baseline = anova_baseline, 
+                           EN_cutoff = EN_cutoff)
     # -------------------------------------------------------------------------------------------
+    features <- step2$features
     features <- features[grepl('\\*', features$id),]
     # -------------------------------------------------------------------------------------------
     if(nrow(features) == 0){
@@ -118,7 +119,8 @@ PACIFIC_survival_step2 <- function(output_dir,
         return(NULL)
     }
     # -------------------------------------------------------------------------------------------
-    data_vars <- readRDS(paste0(output_dir, '/step1-records.rds'))$data_vars
+    records <- step2$records
+    data_vars <- records$data_vars
     colnames(data_vars)[colnames(data_vars) == 'response'] <- 'time'
     colnames(data_vars)[colnames(data_vars) == 'event'] <- 'status'
     km_plot_list <- sapply(unique(features$id), get_km_plot, features=features, data_vars=data_vars, simplify = FALSE, USE.NAMES = TRUE)
@@ -516,21 +518,35 @@ PACIFIC_step1 <- function(data,
 PACIFIC_step2 <- function(output_dir, 
                           EN_cutoff = 50,
                           anova_baseline = NA, 
-                          verbose = FALSE){
+                          verbose = TRUE){
+    
     # ---------------------------------------------------------------------------------------------
-    records <- readRDS(paste0(output_dir, '/step1-records.rds'))
+    read_first_and_check_with_others <- function(fs){
+        r <- readRDS(fs[1])
+        for(f in fs[-1]){
+            if(!identical(r, readRDS(f))){
+                stop('Step1 calls are inconsistent.')
+            }
+        }
+        return(r)
+    }
+    # ---------------------------------------------------------------------------------------------
+    if(verbose) cat('Checking the consistency of Step1 calls\n'); flush.console()
+    args <- read_first_and_check_with_others(list.files(output_dir, pattern = 'step1-arguments', full.names = T))
+    records <- read_first_and_check_with_others(list.files(output_dir, pattern = 'step1-records', full.names = T))
     family <- records$family
     data <- records$data
     data_vars <- records$data_vars
     features <- records$features
     # ---------------------------------------------------------------------------------------------
+    if(verbose) cat('Processing the results of Step1 calls\n'); flush.console()
     S <- lapply(list.files(output_dir, pattern = 'step1-results', full.names = T), readRDS)
     N <- sum(sapply(S, length))
-    if(0 == length(unlist(S))){ if(verbose) cat('No feature selected by EN in step1\n'); return(NULL) }
+    if(0 == length(unlist(S))){ if(verbose) cat('No feature selected by EN in step1\n'); flush.console(); return(NULL) }
     S <- sort(100 * table(unlist(S)) / N, decreasing = T)
     features$EN_score <- as.numeric(S[features$variable])
     features <- subset(features, EN_score > EN_cutoff)
-    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); return(NULL) }
+    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); flush.console(); return(NULL) }
     features <- features[order(features$EN_score, decreasing=T),]
     # ---------------------------------------------------------------------------------------------
     new_variable <- function() paste0('v', 1 + max(as.numeric(gsub('v', '', grep('^v[0-9]+$', colnames(data_vars), value=T)))))
@@ -548,7 +564,7 @@ PACIFIC_step2 <- function(output_dir,
     features$feature2_variable <- mapply(get_variable_of_single_feature, features$feature2, features$feature2_level)
     # remove rows with "interaction_element" from "features" to focus on rows with "single_features" & "interaction_features"
     features <- subset(features, type != 'interaction_element')
-    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); return(NULL) }
+    if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); flush.console(); return(NULL) }
     # ---------------------------------------------------------------------------------------------
     # validate anova_baseline
     if(identical(NA, anova_baseline)) anova_baseline <- character(0)
@@ -606,7 +622,7 @@ PACIFIC_step2 <- function(output_dir,
         )
     })))
     
-    return(features)
+    return(list(features=features, records=records))
 }
 
 # Get the total number of iterations currently stored in a directory
