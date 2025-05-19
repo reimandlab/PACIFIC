@@ -24,7 +24,6 @@ PACIFIC_survival_step1 <- function(data,
                                    num_iterations = 10, 
                                    EN_cutoff = 50,
                                    output_dir, 
-                                   job_id = 1,
                                    verbose = TRUE){
     
     # validate and process arguments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -74,7 +73,7 @@ PACIFIC_survival_step1 <- function(data,
     }
     
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-   
+    
     PACIFIC_step1(data = data,
                   response = 'time',
                   event = 'status',
@@ -86,7 +85,6 @@ PACIFIC_survival_step1 <- function(data,
                   features_to_skip_univariate_association_prefiltering = features_to_skip_univariate_association_prefiltering,
                   num_iterations = num_iterations, 
                   output_dir = output_dir, 
-                  job_id = job_id,
                   verbose = verbose)
 }
 
@@ -166,9 +164,9 @@ PACIFIC_survival_step2 <- function(output_dir,
     if(verbose){ cat('elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
     return(results)
 }
-    
-    
-    
+
+
+
 
 # data A data.frame (or an extension of data.framethe, e.g. data.table). The table of input data with rows for samples and columns for features.
 # response Name of the column in data which contains the response values.
@@ -201,9 +199,10 @@ PACIFIC_step1 <- function(data,
                           subsampling_ratio = 0.8,
                           num_iterations,
                           output_dir,
-                          job_id = 1,
                           verbose = FALSE){
-
+    
+    UNIQUE.TAG <- format(as.numeric(Sys.time())*1e6, scientific=F)
+    
     S.TM <- Sys.time()
     
     if(verbose){ cat('----------------------------------------------------\nPACIFIC step 1:\n'); flush.console() }
@@ -214,39 +213,9 @@ PACIFIC_step1 <- function(data,
     # create the output_dir. If it exists, this does nothing
     dir.create(output_dir, recursive = T, showWarnings = F)
     
-    
-    # the vector of job ids is saved in a specific file in output_dir
-    job_ids_pth <- paste0(output_dir, '/step1-job-ids.rds')
-    # load or initialize (it first call)
-    safe <- safe_read_or_initialize_rds(job_ids_pth, job_id)
-    previous_job_ids <- safe$value
-    if(!safe$initialized){
-        # throw error if the input job id is not unique among the previously used ones
-        if(job_id %in% previous_job_ids) stop(paste0('The job id "', job_id, '" has already been used. Choose a unique id for this job.'))
-        # append the input job id to the list of previously used ones
-        current_job_ids <- c(previous_job_ids, job_id)
-        # save the new list of job ids
-        saveRDS(current_job_ids, job_ids_pth)
-    }
-    
-    # the list of 'conserved arguements of the function' is saved in a specific file in output_dir
-    conserved_args_pth <- paste0(output_dir, '/step1-args.rds')
-    # get the list of input arguments of the function
+    # save the list of input arguments in output_dir
     input_args <- sapply(names(formals(sys.function())), get, envir = environment(), simplify = F, USE.NAMES = T)
-    # remove the non-conserved arguments from this list, i.e. the ones that are not necessary to be consistent across the calls 
-    input_args[c('job_id', 'num_iterations', 'verbose')] <- NULL
-    # load or initialize (it first call)
-    safe <- safe_read_or_initialize_rds(conserved_args_pth, input_args)
-    conserved_args <- safe$value
-    if(!safe$initialized){
-        # throw error if the input arguments are not consistent with the conserved arguements
-        check <- all.equal(input_args, conserved_args)
-        if(!isTRUE(check)){
-            # inconsistent_arg_names <- unique(sapply(strsplit(sapply(strsplit(check, "\u201c"), '[', 2), "\u201d"), '[', 1))
-            # stop(paste0(', paste(inconsistent_arg_names, collapse = ', ')))
-            stop(paste0('\n\nSome input arguments are inconsistent with the previous calls of step-1. Here is the error message:\n', check))
-        }
-    }
+    saveRDS(input_args, paste0(output_dir, '/step1-arguments', '-tag-', UNIQUE.TAG, '.rds'))
     
     # validate arg data
     if(!is.data.frame(data)) stop('"data" should be a data.frame or an instance of a class extended from data.frame')
@@ -336,7 +305,7 @@ PACIFIC_step1 <- function(data,
     stopifnot(1 == length(subsampling_ratio), is.numeric(subsampling_ratio), subsampling_ratio > 0, subsampling_ratio < 1)
     stopifnot(1 == length(num_iterations), is.numeric(num_iterations), num_iterations > 0)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+    
     # collect the "input features", validate and prepare data columns >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     features <- c(single_features, interaction_features)
     # *** include individual elements of "interaction_features" in the "features"
@@ -403,25 +372,25 @@ PACIFIC_step1 <- function(data,
         
     }; rm(f)
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
+    
     # >>> calculate "min_group_size" for sparsity filtering
     x <- unlist(strsplit(sparsity_criterion, '_'))
     threshold <- as.numeric(x[1])
     method <- x[2]
     if(method == 'percent') min_group_size <- subsampling_ratio * nrow(data) * threshold / 100
     if(method == 'absolute') min_group_size <- threshold
-
+    
     # >>> discretize "data" for "features_to_discretize" -> "data_disc"
     data_disc <- discretize(data = data, 
                             features = features_to_discretize, 
                             discretization_function = discretization_function)
-
+    
     # >>> make the table of "features" based on "data_disc" and "input features"
     features <- make_table_of_features(data=data_disc, 
                                        features_vector = features, 
                                        single_features = single_features, 
                                        flexible_features = features_with_flexible_direction)
-
+    
     # >>> apply sparsity filter to "data_disc" and "features" with "min_group_size" and "features_to_skip_sparsity_prefiltering".
     # the feature IDs detected as sparse at this step (using the whole set of samples) will necessarily 
     # be detected as sparse in the iterations (using subsets of samples). So it's reasonalbe to 
@@ -431,27 +400,20 @@ PACIFIC_step1 <- function(data,
                                    skip_ids = features_to_skip_sparsity_prefiltering, 
                                    min_group_size = min_group_size)
     if(0 == nrow(features)) stop('All input features are detected as sparse. Cannot continue to feature selection.')
-
+    
     # >>> get data table of variables based on "data_disc" and "features" -> "data_vars"
     data_vars <- make_data_for_variables(data = data_disc, features = features)
-
     
-    # >>> create the "records", save in "output_dir", and check the consistency with previous iterations
+    
+    # >>> create the "records" and save in output_dir. 
     # "records" = list("family", "data", "data_vars", "features")
     # to save in "records", remove "group" column from "features" and unique its rows
     temp_features <- unique(subset(features, select = -group))
     rownames(temp_features) <- NULL
     records <- list(family = family, data = data, data_vars = data_vars, features = temp_features)
     rm(temp_features)
-    # path for storing the records 
-    conserved_records_pth <- paste0(output_dir, '/step1-records.rds')
-    # load the 'conserved records' from conserved_records_pth or initialize the file for the first call
-    safe <- safe_read_or_initialize_rds(conserved_records_pth, records)
-    conserved_records <- safe$value
-    if(!safe$initialized){
-        # throw error if the current records is not consistent with the conserved paste0
-        if(!identical(records, conserved_records)) stop('the processed data and features are inconsistent with previous iterations')
-    }
+    saveRDS(records, paste0(output_dir, '/step1-records', '-tag-', UNIQUE.TAG, '.rds'))
+    
     
     F.TM <- Sys.time()
     if(verbose){ cat(format(F.TM - S.TM), '\n'); flush.console() }
@@ -466,7 +428,7 @@ PACIFIC_step1 <- function(data,
     res <- lapply(1:num_iterations, function(iter){
         S.TM <- Sys.time()
         if(verbose){ cat(paste0('iteration ', iter, '/', num_iterations, ' : ')); flush.console() }
-
+        
         # >>> (1) subsample "data" -> "data_samp"
         sampleRows <- function(df, ratio) df[sample(nrow(df), floor(ratio*nrow(df))), ]
         if(family == 'cox'){
@@ -483,12 +445,12 @@ PACIFIC_step1 <- function(data,
         } else {
             stop('invalid family')
         }
-
+        
         # >>> (2) discretize "data_samp" for "features_to_discretize" -> "data_samp_disc"
         data_samp_disc <- discretize(data = data_samp, 
                                      features = features_to_discretize, 
                                      discretization_function = discretization_function)
-    
+        
         # >>> (3) apply sparsity filter to "data_samp_disc" and "features" with "min_group_size" and "features_to_skip_sparsity_prefiltering".
         features_flt1 <- filter_by_sparsity(data = data_samp_disc, 
                                             features = features, 
@@ -502,7 +464,7 @@ PACIFIC_step1 <- function(data,
         
         # >>> (4) get data table of variables based on "data_samp_disc" and "features_flt1" -> "data_samp_vars"
         data_samp_vars <- make_data_for_variables(data = data_samp_disc, features = features_flt1)
-
+        
         # >>> (5) apply univariate association filter to "data_samp_vars" for "features_flt1" using "univariate_p_cutoff" taking care of "features_to_skip_univariate_association_prefiltering"
         features_flt2 <- filter_by_univariate_association(family = family,
                                                           data = data_samp_vars, 
@@ -535,19 +497,17 @@ PACIFIC_step1 <- function(data,
         if(verbose){ cat(length(selected_variables), 'features selected by Elastic net.', format(F.TM - S.TM), '\n'); flush.console() }
         return(selected_variables)
     })
-
+    
     
     S.TM.saving <- Sys.time()
     if(verbose){ cat('saving the results ... '); flush.console() }
-    saveRDS(res, paste0(output_dir, '/step1-results', '-job-', job_id, '-iters-', num_iterations, '.rds'))
+    saveRDS(res, paste0(output_dir, '/step1-results', '-iter-', num_iterations, '-tag-', UNIQUE.TAG, '.rds'))
     F.TM.saving <- Sys.time()
     if(verbose){ cat(format(F.TM.saving - S.TM.saving), '\n'); flush.console() }
     
     
     F.TM <- Sys.time()
     if(verbose){ cat('total elapsed time:', format(F.TM - S.TM), '\n'); flush.console() }
-    
-    return(0)
 }
 
 # output_dir WIP
@@ -623,26 +583,26 @@ PACIFIC_step2 <- function(output_dir,
         V2 <- r[['feature2_variable']]
         isIntr <- grepl('\\*', r[['id']])
         suppressWarnings(
-        data.frame(P_ANOVA_of_feature = p_anova(family, data_vars, B, X),
-                   P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V1), X), NA),
-                   P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V2), X), NA),
-                   P_ANOVA_of_feature_controlled_for_both_variables = ifelse(isIntr, p_anova(family, data_vars, c(B, V1, V2), X), NA),
-                   
-                   P_ANOVA_of_first_variable = ifelse(isIntr, p_anova(family, data_vars, B, V1), NA),
-                   
-                   P_ANOVA_of_second_variable = ifelse(isIntr, p_anova(family, data_vars, B, V2), NA),
-                   
-                   Effect_size_of_feature = effect_size(family, data_vars, B, X, 'value'),
-                   Effect_size_lower.95_of_feature = effect_size(family, data_vars, B, X, 'lower'),
-                   Effect_size_upper.95_of_feature = effect_size(family, data_vars, B, X, 'upper'),
-                   
-                   Effect_size_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'value'), NA),
-                   Effect_size_lower.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'lower'), NA),
-                   Effect_size_upper.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'upper'), NA),
-                   
-                   Effect_size_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'value'), NA),
-                   Effect_size_lower.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'lower'), NA),
-                   Effect_size_upper.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'upper'), NA))
+            data.frame(P_ANOVA_of_feature = p_anova(family, data_vars, B, X),
+                       P_ANOVA_of_feature_controlled_for_first_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V1), X), NA),
+                       P_ANOVA_of_feature_controlled_for_second_variable = ifelse(isIntr, p_anova(family, data_vars, c(B, V2), X), NA),
+                       P_ANOVA_of_feature_controlled_for_both_variables = ifelse(isIntr, p_anova(family, data_vars, c(B, V1, V2), X), NA),
+                       
+                       P_ANOVA_of_first_variable = ifelse(isIntr, p_anova(family, data_vars, B, V1), NA),
+                       
+                       P_ANOVA_of_second_variable = ifelse(isIntr, p_anova(family, data_vars, B, V2), NA),
+                       
+                       Effect_size_of_feature = effect_size(family, data_vars, B, X, 'value'),
+                       Effect_size_lower.95_of_feature = effect_size(family, data_vars, B, X, 'lower'),
+                       Effect_size_upper.95_of_feature = effect_size(family, data_vars, B, X, 'upper'),
+                       
+                       Effect_size_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'value'), NA),
+                       Effect_size_lower.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'lower'), NA),
+                       Effect_size_upper.95_of_first_variable = ifelse(isIntr, effect_size(family, data_vars, B, V1, 'upper'), NA),
+                       
+                       Effect_size_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'value'), NA),
+                       Effect_size_lower.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'lower'), NA),
+                       Effect_size_upper.95_of_second_variable = ifelse(isIntr, effect_size(family, data_vars, B, V2, 'upper'), NA))
         )
     })))
     
