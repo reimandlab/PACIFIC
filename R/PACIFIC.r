@@ -203,7 +203,7 @@ PACIFIC_step1 <- function(data,
                           output_dir,
                           verbose = FALSE){
     
-    UNIQUE.TAG <- format(as.numeric(Sys.time())*1e6, scientific=F)
+    UNIQUE.TAG <- gsub('\\/', '', tempfile(pattern='', tmpdir=''))
     
     S.TM <- Sys.time()
     
