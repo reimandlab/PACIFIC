@@ -93,11 +93,13 @@ status <- PACIFIC_survival_step1(data = data,
 # saving the results ... 0.0007610321 secs 
 # total elapsed time: 2.962891 secs 
 
-results <- PACIFIC_survival_step2(step1_output_dir = 'out',
+results <- PACIFIC_survival_step2(output_dir = 'out',
                                   anova_baseline = baseline)
 # ----------------------------------------------------
 # PACIFIC step 2:
-# elapsed time: 0.601191 secs 
+# Checking the consistency of Step1 calls
+# Processing the results of Step1 calls
+# elapsed time: 0.4709771 secs
 ```
 
 The returned `results` is saved in .RDS format in `output_dir`. View the top interactions (frequently selected in the iterations) in the `$top_interactions` facet of `results`:
