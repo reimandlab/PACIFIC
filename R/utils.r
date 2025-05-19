@@ -318,56 +318,56 @@ get_km_plot <- function(this_id, features, data_vars){
 
 
 
-wait_for_file_ready <- function(path, check_interval = 1, max_wait = 30) {
+safe_read_or_initialize_rds <- function(ref_path, init_value, lock_path = paste0(ref_path, ".lock"), max_wait = 30, check_interval = 1) {
+  # Wait until a file is ready: exists, non-empty, stable
+  wait_for_file_ready <- function(path) {
     waited <- 0
-    last_size <- 0
+    last_size <- -1
     while (waited < max_wait) {
-        if (file.exists(path)) {
-            current_size <- file.info(path)$size
-            if (!is.na(current_size) && current_size == last_size && current_size > 0) {
-                return(TRUE)
-            }
-            last_size <- current_size
-        }
-        Sys.sleep(check_interval)
-        waited <- waited + check_interval
+      if (file.exists(path)) {
+        info <- file.info(path)
+        if (!is.na(info$size) && info$size == last_size && info$size > 0) return(TRUE)
+        last_size <- info$size
+      }
+      Sys.sleep(check_interval)
+      waited <- waited + check_interval
     }
-    stop("Timeout: reference file did not stabilize.")
-}
+    stop("Timeout: file not stabilized:", path)
+  }
 
-safe_read <- function(path, attempts = 5, delay = 1) {
-    for (i in seq_len(attempts)) {
-        result <- tryCatch(readRDS(path), error = function(e) { NULL })
-        if (!is.null(result)) return(result)
-        Sys.sleep(delay)
+  # Try to read RDS with retry logic in case it's mid-write
+  safe_read_rds <- function(path, retries = 3, delay = 1) {
+    for (i in seq_len(retries)) {
+      result <- tryCatch(readRDS(path), error = function(e) NULL)
+      if (!is.null(result)) return(result)
+      Sys.sleep(delay)
     }
-    stop("Failed to readRDS after multiple attempts.")
-}
+    stop("Failed to readRDS after retries:", path)
+  }
 
-safe_read_or_initialize <- function(ref_path, init_value, lock_path = paste0(ref_path, ".lock")) {
-    initialized <- FALSE
-    if (!file.exists(ref_path)) {
-        # Try to create lock file atomically
-        success <- tryCatch({
-            lock_file <- file(lock_path, open = "wx")
-            close(lock_file)
-            TRUE
-        }, error = function(e) { FALSE })
-        # lock is obtained; initialize it
-        if (success) {
-            tmp_path <- paste0(ref_path, ".tmp")
-            saveRDS(init_value, tmp_path)
-            file.rename(tmp_path, ref_path)  # atomic
-            file.remove(lock_path)
-            initialized <- TRUE
-        } else {
-            # Another process is writing; wait for it
-            wait_for_file_ready(ref_path)
-        }
+  initialized <- FALSE
+
+  if (!file.exists(ref_path)) {
+    # Try to acquire lock (exclusive creation of lock file)
+    success <- tryCatch({
+      lock_file <- file(lock_path, open = "wx")  # fail if exists
+      close(lock_file)
+      TRUE
+    }, error = function(e) FALSE)
+
+    if (success) {
+      tmp_path <- paste0(ref_path, ".tmp")
+      saveRDS(init_value, tmp_path)
+      file.rename(tmp_path, ref_path)  # atomic move
+      file.remove(lock_path)
+      initialized <- TRUE
     } else {
-        # File exists but may be half-written; still wait
-        wait_for_file_ready(ref_path)
+      wait_for_file_ready(ref_path)
     }
-  value <- safe_read(ref_path)
+  } else {
+    wait_for_file_ready(ref_path)
+  }
+
+  value <- safe_read_rds(ref_path)
   list(value = value, initialized = initialized)
 }
