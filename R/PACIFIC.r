@@ -532,8 +532,27 @@ PACIFIC_step2 <- function(output_dir,
     }
     # ---------------------------------------------------------------------------------------------
     if(verbose) cat('Checking the consistency of Step1 calls\n'); flush.console()
-    args <- read_first_and_check_with_others(list.files(output_dir, pattern = 'step1-arguments', full.names = T))
-    records <- read_first_and_check_with_others(list.files(output_dir, pattern = 'step1-records', full.names = T))
+    # --------------------
+    fs <- list.files(output_dir, pattern = 'step1-arguments', full.names = T)
+    args <- readRDS(fs[1])
+    args <- args[! names(args) %in% c('num_iterations', 'verbose')]
+    for(f in fs[-1]){
+        r <- readRDS(f)
+        r <- r[! names(r) %in% c('num_iterations', 'verbose')]
+        if(!identical(r, args)){
+            stop('Step1 calls are inconsistent.')
+        }
+    }
+    # --------------------
+    fs <- list.files(output_dir, pattern = 'step1-records', full.names = T)
+    records <- readRDS(fs[1])
+    for(f in fs[-1]){
+        r <- readRDS(f)
+        if(!identical(r, records)){
+            stop('Step1 calls are inconsistent.')
+        }
+    }
+    # --------------------
     family <- records$family
     data <- records$data
     data_vars <- records$data_vars
