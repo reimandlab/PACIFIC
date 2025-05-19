@@ -218,7 +218,7 @@ PACIFIC_step1 <- function(data,
     # the vector of job ids is saved in a specific file in output_dir
     job_ids_pth <- paste0(output_dir, '/step1-job-ids.rds')
     # load or initialize (it first call)
-    safe <- safe_read_or_initialize(job_ids_pth, job_id)
+    safe <- safe_read_or_initialize_rds(job_ids_pth, job_id)
     previous_job_ids <- safe$value
     if(!safe$initialized){
         # throw error if the input job id is not unique among the previously used ones
@@ -236,7 +236,7 @@ PACIFIC_step1 <- function(data,
     # remove the non-conserved arguments from this list, i.e. the ones that are not necessary to be consistent across the calls 
     input_args[c('job_id', 'num_iterations', 'verbose')] <- NULL
     # load or initialize (it first call)
-    safe <- safe_read_or_initialize(conserved_args_pth, input_args)
+    safe <- safe_read_or_initialize_rds(conserved_args_pth, input_args)
     conserved_args <- safe$value
     if(!safe$initialized){
         # throw error if the input arguments are not consistent with the conserved arguements
@@ -446,7 +446,7 @@ PACIFIC_step1 <- function(data,
     # path for storing the records 
     conserved_records_pth <- paste0(output_dir, '/step1-records.rds')
     # load the 'conserved records' from conserved_records_pth or initialize the file for the first call
-    safe <- safe_read_or_initialize(conserved_records_pth, records)
+    safe <- safe_read_or_initialize_rds(conserved_records_pth, records)
     conserved_records <- safe$value
     if(!safe$initialized){
         # throw error if the current records is not consistent with the conserved paste0
