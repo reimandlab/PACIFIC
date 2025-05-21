@@ -113,9 +113,8 @@ PACIFIC_survival_step2 <- function(output_dir,
     # -------------------------------------------------------------------------------------------
     features <- features[grepl('\\*', features$id),]
     # -------------------------------------------------------------------------------------------
-    # Do FDR ...
     if(nrow(features) == 0){
-        cat('No significant interaction feature found\n')
+        cat('No interaction feature passed the selection cutoff\n')
         return(NULL)
     }
     # -------------------------------------------------------------------------------------------
