@@ -653,7 +653,7 @@ PACIFIC_step2 <- function(output_dir,
 # dir WIP
 current_total_iters <- function(dir){
     r <- list.files(dir, pattern = 'step1-results')
-    r <- regmatches(r, regexec('-N-iters-\\s*(.*?)\\s*-timestamp-', r))
+    r <- regmatches(r, regexec('-iter-\\s*(.*?)\\s*-tag-', r))
     N <- sum(as.numeric(sapply(r, '[[', 2)))
     return(N)
 }
