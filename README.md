@@ -35,6 +35,17 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
            "T_cells_CD8","T_cells_regulatory_Tregs")
 
 ####
+# Any categorical feature must be `factor` with two levels,
+# where the second level is considered as the "active" state.
+
+# Here, each feature in "feat1" is either "not_mutated" or "mutated".
+# Let's make them factors with correct levels.
+for(f in feat1){
+   data[[f]] <- factor(data[[f]], levels = c("not_mutated", "mutated"))
+}
+####
+
+####
 # View a few rows of the data with the selected columns:
 ####
 
