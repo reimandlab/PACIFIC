@@ -569,6 +569,7 @@ PACIFIC_step2 <- function(output_dir,
     if(0 == length(unlist(S))){ if(verbose) cat('No feature selected by EN in step1\n'); flush.console(); return(NULL) }
     S <- sort(100 * table(unlist(S)) / N, decreasing = T)
     features$EN_score <- as.numeric(S[features$variable])
+    features$N_total_iters <- N
     features <- subset(features, EN_score > EN_cutoff)
     if(nrow(features) == 0){ if(verbose) cat('No feature passed EN_cutoff\n'); flush.console(); return(NULL) }
     features <- features[order(features$EN_score, decreasing=T),]
