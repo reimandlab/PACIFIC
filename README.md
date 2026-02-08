@@ -39,7 +39,7 @@ feat2 <- c("B_cells_memory", "Plasma_cells",
 # where the second level is considered as the "active" state.
 
 # Here, each feature in "feat1" is either "not_mutated" or "mutated".
-# Let's make them factors with correct levels.
+# Let's make them factors with correct reference level.
 for(f in feat1){
    data[[f]] <- factor(data[[f]], levels = c("not_mutated", "mutated"))
 }
